@@ -152,6 +152,7 @@
     <div class="header">
         <h2>💰 Catatan emas K&D <span style="font-size:11px;color:var(--gold-primary);vertical-align:super;">Premium</span></h2>
         <div class="header-actions">
+            <button class="btn-icon" onclick="showFullPriceTable()" style="color:var(--gold-light);background:rgba(212,175,55,0.15);margin-right:4px;border:1px solid var(--border-color);" title="Tabel Harga Lengkap"><i class="fa-solid fa-table-list"></i></button>
             <button class="btn-icon" onclick="toggleSettings()" style="color:var(--text-light);background:rgba(255,255,255,0.05);margin-right:8px;" title="Pengaturan API"><i class="fa-solid fa-gear"></i></button>
             <div class="user-tag" id="welcome">👤 Halo, -</div>
             <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
@@ -180,9 +181,6 @@
                         <label>API Harga Emas Custom (Opsional)</label>
                         <input type="text" id="apiGoldUrl" placeholder="Kosongkan untuk pakai Logam Mulia API bawaan">
                     </div>
-                </div>
-                <div style="margin-top: 16px; text-align: center;">
-                    <button class="btn-primary" onclick="showFullPriceTable()" style="background: var(--gold-dark); width: 100%; max-width: 300px;"><i class="fa-solid fa-table"></i> Lihat Tabel Harga Emas Lengkap</button>
                 </div>
             </div>
 
