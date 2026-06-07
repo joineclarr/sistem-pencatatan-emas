@@ -131,6 +131,9 @@
     </style>
 </head>
 <body>
+    <!-- Sound Effect -->
+    <audio id="kachingSound" src="https://www.myinstants.com/media/sounds/para-sesi-efekti_PaUswM1.mp3" preload="auto"></audio>
+
     <div class="ambient-glow"></div>
     <div class="ambient-glow-2"></div>
 
@@ -391,6 +394,7 @@
             saveTx(d);
             ['gram','hargaBeli','tglTx'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('nama').value = capUser;
+            document.getElementById('kachingSound').play().catch(e => console.log('Audio error:', e));
             render();
             syncWithSheets(true);
         }
