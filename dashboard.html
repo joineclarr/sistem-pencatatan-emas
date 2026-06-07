@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Gold Portfolio Pro</title>
+    <meta name="description" content="Dashboard manajemen portofolio emas premium">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --gold-primary: #f1c40f;
+            --gold-dark: #d4af37;
+            --gold-light: #f3e5ab;
+            --bg-dark: #0f1219;
+            --card-dark: #1a1f2c;
+            --text-light: #f5f6fa;
+            --text-muted: #8b9bb4;
+            --green: #2ecc71;
+            --red: #e74c3c;
+            --border-color: rgba(212, 175, 55, 0.15);
+        }
+        * { box-sizing:border-box; margin:0; padding:0; font-family:'Outfit',sans-serif; transition: all 0.2s ease; }
+        body { background:var(--bg-dark); color:var(--text-light); min-height:100vh; overflow-x:hidden; }
+
+        .ambient-glow { position:fixed; width:400px; height:400px; background:radial-gradient(circle,rgba(212,175,55,0.08) 0%,transparent 70%); top:-100px; right:-100px; z-index:-1; pointer-events:none; }
+        .ambient-glow-2 { position:fixed; width:400px; height:400px; background:radial-gradient(circle,rgba(46,204,113,0.04) 0%,transparent 70%); bottom:-100px; left:-100px; z-index:-1; pointer-events:none; }
+
+        /* HEADER */
+        .header { background:linear-gradient(180deg,#161b26 0%,#0f1219 100%); border-bottom:1px solid var(--border-color); padding:16px 32px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; backdrop-filter:blur(10px); }
+        .header h2 { font-size:20px; background:linear-gradient(135deg,var(--gold-light),var(--gold-dark)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:700; }
+        .header-actions { display:flex; align-items:center; gap:12px; }
+        .user-tag { background:rgba(212,175,55,0.1); color:var(--gold-light); padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; border:1px solid var(--border-color); }
+        .btn-logout { background:transparent; border:1px solid rgba(231,76,60,0.4); color:var(--red); padding:8px 16px; border-radius:10px; font-weight:600; cursor:pointer; font-size:13px; }
+        .btn-logout:hover { background:rgba(231,76,60,0.1); }
+
+        /* CONTAINER */
+        .container { max-width:1400px; margin:auto; padding:28px 20px; }
+
+        /* LAYOUT SWITCHER */
+        .layout-switcher { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; background:var(--card-dark); padding:12px 20px; border-radius:14px; border:1px solid var(--border-color); }
+        .switch-title { font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:8px; }
+        .switch-buttons { display:flex; gap:8px; }
+        .switch-btn { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:var(--text-muted); padding:8px 16px; border-radius:8px; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:6px; }
+        .switch-btn.active { background:rgba(212,175,55,0.15); border-color:var(--gold-primary); color:var(--gold-light); }
+
+        /* WORKSPACE */
+        .workspace-wrapper { transition:all 0.4s cubic-bezier(0.165,0.84,0.44,1); margin:0 auto; width:100%; }
+        .workspace-wrapper.mode-hp { max-width:430px; border:12px solid #222; border-radius:36px; background:var(--bg-dark); min-height:800px; padding:15px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); }
+
+        /* INTEGRATION BOX */
+        .integration-box { background:linear-gradient(135deg,rgba(26,31,44,.9),rgba(15,18,25,.9)); border:1px dashed var(--gold-dark); border-radius:14px; padding:18px; margin-bottom:24px; }
+        .integration-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
+        .integration-title { font-size:15px; font-weight:600; color:var(--gold-light); display:flex; align-items:center; gap:8px; }
+        .integration-badge { background:rgba(46,204,113,.15); color:var(--green); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700; }
+        .integration-badge.offline { background:rgba(231,76,60,.15); color:var(--red); }
+        .api-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
+        .api-input-wrap { display:flex; flex-direction:column; gap:6px; }
+        .api-input-wrap label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+        .api-input-wrap input { padding:9px 12px; background:rgba(0,0,0,.2); border:1px solid var(--border-color); border-radius:8px; color:var(--text-light); font-size:13px; outline:none; }
+        .api-input-wrap input:focus { border-color:var(--gold-primary); }
+        .status-badge { display:inline-flex; align-items:center; gap:6px; font-size:12px; background:rgba(255,255,255,.05); padding:4px 10px; border-radius:30px; color:var(--text-muted); }
+
+        /* METRIC CARDS */
+        .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:24px; }
+        .mode-hp .grid { grid-template-columns:repeat(2,1fr); }
+        .card { background:var(--card-dark); border-radius:14px; padding:18px; border:1px solid var(--border-color); position:relative; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,.2); }
+        .card::before { content:''; position:absolute; top:0; left:0; width:100%; height:3px; background:linear-gradient(90deg,transparent,var(--gold-dark),transparent); }
+        .card:hover { border-color:rgba(212,175,55,.3); transform:translateY(-2px); }
+        .card-label { color:var(--text-muted); font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+        .card-label i { color:var(--gold-dark); }
+        .big { font-size:22px; font-weight:700; color:var(--text-light); }
+        .green { color:var(--green) !important; }
+        .red { color:var(--red) !important; }
+
+        /* GOLD PRICE TABLE SECTION */
+        .price-section { background:var(--card-dark); border-radius:14px; border:1px solid var(--border-color); overflow:hidden; margin-bottom:24px; display:none; }
+
+        /* ACTION ROW */
+        .action-row { display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap; }
+        .btn-action { display:flex; align-items:center; gap:8px; padding:11px 18px; border:none; border-radius:10px; cursor:pointer; font-weight:600; font-size:13px; font-family:'Outfit',sans-serif; }
+        .btn-excel { background:rgba(46,204,113,.15); border:1px solid rgba(46,204,113,.4); color:var(--green); }
+        .btn-excel:hover { background:rgba(46,204,113,.25); }
+        .btn-sheets { background:rgba(241,196,15,.1); border:1px solid rgba(241,196,15,.3); color:var(--gold-light); }
+        .btn-sheets:hover { background:rgba(241,196,15,.2); }
+
+        /* WORKSPACE GRID */
+        .workspace-grid { display:grid; grid-template-columns:1fr 2fr; gap:24px; }
+        .mode-hp .workspace-grid { grid-template-columns:1fr; }
+        @media (max-width:900px) { .workspace-grid { grid-template-columns:1fr; } }
+
+        /* FORM SECTION */
+        .form-section { background:var(--card-dark); border-radius:14px; padding:22px; border:1px solid var(--border-color); height:fit-content; }
+        .form-section h3 { font-size:16px; margin-bottom:18px; color:var(--gold-light); border-bottom:1px solid rgba(255,255,255,.05); padding-bottom:10px; }
+        .form-group { margin-bottom:14px; }
+        .form-group label { display:block; margin-bottom:6px; font-size:12px; color:var(--text-muted); font-weight:600; }
+        .form-control { width:100%; padding:11px 12px; background:rgba(0,0,0,.2); border:1px solid var(--border-color); border-radius:10px; color:var(--text-light); outline:none; font-size:14px; font-family:'Outfit',sans-serif; }
+        .form-control:focus { border-color:var(--gold-primary); }
+        button.btn-primary { width:100%; padding:13px; border:none; border-radius:10px; background:linear-gradient(135deg,var(--gold-primary),var(--gold-dark)); color:#111; font-weight:700; font-size:15px; cursor:pointer; font-family:'Outfit',sans-serif; }
+        button.btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(212,175,55,.3); }
+        button.btn-primary:disabled { opacity:.7; cursor:not-allowed; transform:none; }
+
+        /* HISTORY TABLE */
+        .history-section { background:var(--card-dark); border-radius:14px; padding:22px; border:1px solid var(--border-color); overflow:hidden; }
+        .history-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px; }
+        .history-header h3 { font-size:16px; color:var(--gold-light); }
+        .table-responsive { width:100%; overflow-x:auto; border-radius:10px; background:rgba(0,0,0,.12); }
+        table { width:100%; border-collapse:collapse; font-size:13px; }
+        th { background:rgba(255,255,255,.02); color:var(--text-muted); font-weight:600; padding:12px 14px; text-align:left; border-bottom:1px solid rgba(255,255,255,.05); white-space:nowrap; }
+        td { padding:13px 14px; color:var(--text-light); border-bottom:1px solid rgba(255,255,255,.03); }
+        tr:hover td { background:rgba(255,255,255,.02); }
+        .table-actions { display:flex; gap:6px; }
+        .btn-icon { background:transparent; border:none; cursor:pointer; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:13px; }
+        .btn-edit { color:var(--gold-primary); background:rgba(241,196,15,.1); }
+        .btn-edit:hover { background:rgba(241,196,15,.2); }
+        .btn-delete { color:var(--red); background:rgba(231,76,60,.1); }
+        .btn-delete:hover { background:rgba(231,76,60,.2); }
+
+        /* MODAL */
+        .modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.7); z-index:1000; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(5px); opacity:0; pointer-events:none; }
+        .modal.active { opacity:1; pointer-events:auto; }
+        .modal-content { background:var(--card-dark); border:1px solid var(--border-color); border-radius:18px; padding:28px; width:90%; max-width:440px; box-shadow:0 20px 40px rgba(0,0,0,.5); }
+        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+        .modal-header h3 { color:var(--gold-light); font-size:17px; }
+        .btn-close { background:transparent; border:none; color:var(--text-muted); font-size:20px; cursor:pointer; }
+
+        /* TOAST */
+        .toast { position:fixed; bottom:20px; right:20px; background:var(--card-dark); border-left:4px solid var(--gold-primary); padding:14px 22px; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.3); z-index:2000; display:flex; align-items:center; gap:10px; transform:translateY(150%); opacity:0; transition:all .3s ease; font-size:14px; }
+        .toast.show { transform:translateY(0); opacity:1; }
+
+        .hidden { display:none !important; }
+
+        @media (max-width:600px) {
+            .header { padding:14px 16px; }
+            .container { padding:16px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+    <div class="ambient-glow-2"></div>
+
+    <!-- Header -->
+    <div class="header">
+        <h2>💰 Gold Portfolio Pro <span style="font-size:11px;color:var(--gold-primary);vertical-align:super;">Premium</span></h2>
+        <div class="header-actions">
+            <div class="user-tag" id="welcome">👤 Halo, -</div>
+            <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Responsive Simulator Switcher -->
+        <div class="layout-switcher">
+            <div class="switch-title"><i class="fa-solid fa-display"></i> Mode Tampilan:</div>
+            <div class="switch-buttons">
+                <button id="btnLap" class="switch-btn active" onclick="setLayoutMode('laptop')"><i class="fa-solid fa-laptop"></i> Laptop/PC</button>
+                <button id="btnHP" class="switch-btn" onclick="setLayoutMode('hp')"><i class="fa-solid fa-mobile-screen-button"></i> HP</button>
+            </div>
+        </div>
+
+        <div id="workspaceWrapper" class="workspace-wrapper">
+
+            <!-- Integration Box -->
+            <div class="integration-box">
+                <div class="integration-header">
+                    <div class="integration-title"><i class="fa-solid fa-circle-nodes"></i> Google Sheets & Real-Time API</div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <span class="status-badge" id="apiStatus"><i class="fa-solid fa-globe"></i> API Emas: Siap</span>
+                        <span class="integration-badge offline" id="sheetsStatus">Sheets: Offline</span>
+                    </div>
+                </div>
+                <div class="api-grid">
+                    <div class="api-input-wrap">
+                        <label>Google Apps Script URL</label>
+                        <input id="sheetsUrl" type="text" placeholder="https://script.google.com/macros/s/.../exec" onchange="saveConfig()">
+                    </div>
+                    <div class="api-input-wrap">
+                        <label>API Harga Emas Custom (Opsional)</label>
+                        <input id="goldApiUrl" type="text" placeholder="Dikosongkan = pakai Logam Mulia API otomatis" onchange="saveConfig()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6 Metric Cards -->
+            <div class="grid">
+                <div class="card">
+                    <div class="card-label">Harga Beli Hari Ini <i class="fa-solid fa-arrow-trend-up"></i></div>
+                    <div class="big">Rp <span id="buyPrice">-</span></div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Harga Buyback (Jual) <i class="fa-solid fa-arrow-trend-down"></i></div>
+                    <div class="big">Rp <span id="sellPrice">-</span></div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Total Berat <i class="fa-solid fa-weight-hanging"></i></div>
+                    <div class="big" id="totalGram">0 gr</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Total Modal <i class="fa-solid fa-wallet"></i></div>
+                    <div class="big" id="totalModal">Rp 0</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Nilai Aset Saat Ini <i class="fa-solid fa-coins"></i></div>
+                    <div class="big" id="totalAset">Rp 0</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Untung / Rugi <i class="fa-solid fa-chart-line"></i></div>
+                    <div class="big" id="profit">Rp 0</div>
+                </div>
+            </div>
+
+            <!-- Antam Price Table -->
+            <div id="goldPriceSection" class="price-section">
+                <div style="padding:18px 22px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);">
+                    <h3 style="color:var(--gold-light);font-size:15px;"><i class="fa-solid fa-coins" style="color:var(--gold-primary);margin-right:8px;"></i>Harga Emas Antam Hari Ini</h3>
+                    <button class="btn-action btn-sheets" onclick="fetchLiveGoldPrice()" style="padding:7px 12px;font-size:12px;">
+                        <i class="fa-solid fa-rotate"></i> Refresh
+                    </button>
+                </div>
+                <div style="padding:0 22px;">
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Berat</th>
+                                    <th>Harga Beli (Toko)</th>
+                                    <th>Harga Buyback</th>
+                                    <th>Harga/Gram</th>
+                                </tr>
+                            </thead>
+                            <tbody id="goldPriceTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p style="font-size:11px;color:var(--text-muted);padding:12px 0;">
+                        <i class="fa-solid fa-info-circle"></i> Sumber: <a href="https://harga-emas.org" target="_blank" style="color:var(--gold-dark)">harga-emas.org</a> via Logam Mulia API · Auto-refresh 30 menit
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-row">
+                <button class="btn-action btn-excel" onclick="exportToExcel()">
+                    <i class="fa-regular fa-file-excel"></i> Export Excel (.xlsx)
+                </button>
+                <button class="btn-action btn-sheets" onclick="syncWithSheets()">
+                    <i class="fa-solid fa-arrows-rotate"></i> Sinkronisasi Sheets
+                </button>
+                <button class="btn-action btn-sheets" onclick="fetchLiveGoldPrice()">
+                    <i class="fa-solid fa-circle-dollar-to-slot"></i> Update Harga Emas
+                </button>
+            </div>
+
+            <!-- Form + Table Grid -->
+            <div class="workspace-grid">
+
+                <!-- Form -->
+                <div class="form-section">
+                    <h3 id="formTitle">Tambah Transaksi</h3>
+                    <input type="hidden" id="editIndex" value="">
+                    <div class="form-group">
+                        <label>Nama / Pemilik</label>
+                        <input id="nama" class="form-control" type="text" placeholder="Contoh: Logam Mulia Krisna">
+                    </div>
+                    <div class="form-group">
+                        <label>Berat Emas (Gram)</label>
+                        <input id="gram" class="form-control" type="number" step="any" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Harga Beli per Gram (Rp)</label>
+                        <input id="hargaBeli" class="form-control" type="number" placeholder="Contoh: 2888000">
+                    </div>
+                    <div class="form-group">
+                        <label>Tanggal Pembelian</label>
+                        <input id="tglTx" class="form-control" type="datetime-local">
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:18px;">
+                        <button id="btnSubmit" onclick="tambah()" class="btn-primary" style="flex:2;">Simpan Transaksi</button>
+                        <button id="btnCancelEdit" onclick="cancelEdit()" class="btn-logout hidden" style="flex:1;padding:10px;">Batal</button>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="history-section">
+                    <div class="history-header">
+                        <h3>Riwayat Transaksi</h3>
+                        <span class="status-badge" id="rowCountInfo">0 Transaksi</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama Aset</th>
+                                    <th>Berat (gr)</th>
+                                    <th>Harga Beli</th>
+                                    <th>Total Modal</th>
+                                    <th>Tanggal</th>
+                                    <th style="text-align:center;width:90px;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast">
+        <i class="fa-solid fa-circle-check" style="color:var(--gold-primary);"></i>
+        <span id="toastMsg"></span>
+    </div>
+
+    <script>
+        // ─── AUTH GUARD ───────────────────────────────────────
+        if (localStorage.getItem('gold_login') !== '1') {
+            window.location.href = 'index.html';
+        }
+
+        const DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxFmAbtsV_GPeG6-yRh0MLj8BUp7b8QHcqMTgHjmWe2q0NfnCzB4HKyTTZyH4xf2Fk/exec';
+        const GOLD_API_URL       = 'https://logam-mulia-api.iamutaki.workers.dev/api/prices/hargaemas-org';
+
+        let HARGA_BELI_HARI_INI = 2888000;
+        let HARGA_JUAL_HARI_INI = 2599200;
+
+        // ─── INIT ─────────────────────────────────────────────
+        document.getElementById('welcome').textContent = '👤 Halo, ' + (localStorage.getItem('gold_user') || '').toUpperCase();
+        loadConfig();
+        fetchLiveGoldPrice();
+        loadFromSheets();
+
+        // ─── CONFIG ───────────────────────────────────────────
+        function getSheetsUrl() { return localStorage.getItem('gold_sheets_url') || DEFAULT_SHEETS_URL; }
+
+        function loadConfig() {
+            document.getElementById('sheetsUrl').value = getSheetsUrl();
+            document.getElementById('goldApiUrl').value = localStorage.getItem('gold_api_url') || '';
+            document.getElementById('sheetsStatus').textContent = 'Sheets: Terkonfigurasi';
+            document.getElementById('sheetsStatus').className = 'integration-badge';
+        }
+
+        function saveConfig() {
+            localStorage.setItem('gold_sheets_url', document.getElementById('sheetsUrl').value.trim());
+            localStorage.setItem('gold_api_url', document.getElementById('goldApiUrl').value.trim());
+            showToast('Konfigurasi disimpan!');
+            loadConfig();
+        }
+
+        // ─── LOGOUT ───────────────────────────────────────────
+        function logout() {
+            localStorage.removeItem('gold_login');
+            localStorage.removeItem('gold_user');
+            window.location.href = 'index.html';
+        }
+
+        // ─── LAYOUT SIMULATOR ─────────────────────────────────
+        function setLayoutMode(mode) {
+            const w = document.getElementById('workspaceWrapper');
+            if (mode === 'hp') {
+                w.classList.add('mode-hp');
+                document.getElementById('btnHP').classList.add('active');
+                document.getElementById('btnLap').classList.remove('active');
+            } else {
+                w.classList.remove('mode-hp');
+                document.getElementById('btnLap').classList.add('active');
+                document.getElementById('btnHP').classList.remove('active');
+            }
+        }
+
+        // ─── TOAST ────────────────────────────────────────────
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // ─── TRANSACTIONS ────────────────────────────────────
+        function getTx() { return JSON.parse(localStorage.getItem('gold_tx') || '[]'); }
+        function saveTx(d) { localStorage.setItem('gold_tx', JSON.stringify(d)); }
+
+        function tambah() {
+            const nama  = document.getElementById('nama').value.trim();
+            const gram  = Number(document.getElementById('gram').value);
+            const harga = Number(document.getElementById('hargaBeli').value);
+            const inputTgl = document.getElementById('tglTx').value;
+            if (!nama || !gram || !harga) { alert('Lengkapi semua field!'); return; }
+
+            const d = getTx();
+            const editIdx = document.getElementById('editIndex').value;
+            const tgl = inputTgl ? new Date(inputTgl).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
+
+            if (editIdx !== '') {
+                d[parseInt(editIdx)] = { nama, gram, harga, modal: gram*harga, tgl };
+                showToast('Transaksi diperbarui!');
+                cancelEdit();
+            } else {
+                d.push({ nama, gram, harga, modal: gram*harga, tgl });
+                showToast('Transaksi ditambahkan!');
+            }
+            saveTx(d);
+            ['nama','gram','hargaBeli','tglTx'].forEach(id => document.getElementById(id).value = '');
+            render();
+            syncWithSheets(true);
+        }
+
+        function editTx(i) {
+            const x = getTx()[i];
+            document.getElementById('formTitle').textContent   = 'Edit Transaksi';
+            document.getElementById('editIndex').value         = i;
+            document.getElementById('nama').value              = x.nama;
+            document.getElementById('gram').value              = x.gram;
+            document.getElementById('hargaBeli').value         = x.harga;
+            document.getElementById('btnSubmit').textContent   = 'Update Transaksi';
+            document.getElementById('btnCancelEdit').classList.remove('hidden');
+            document.getElementById('nama').focus();
+        }
+
+        function cancelEdit() {
+            document.getElementById('formTitle').textContent   = 'Tambah Transaksi';
+            document.getElementById('editIndex').value         = '';
+            ['nama','gram','hargaBeli','tglTx'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('btnSubmit').textContent   = 'Simpan Transaksi';
+            document.getElementById('btnCancelEdit').classList.add('hidden');
+        }
+
+        function deleteTx(i) {
+            if (!confirm('Hapus transaksi ini?')) return;
+            const d = getTx(); d.splice(i, 1); saveTx(d);
+            showToast('Transaksi dihapus.');
+            render(); syncWithSheets(true);
+        }
+
+        // ─── RENDER ───────────────────────────────────────────
+        function render() {
+            const d = getTx();
+            let html = '', gram = 0, modal = 0;
+            d.forEach((x, i) => {
+                gram += x.gram; modal += x.modal;
+                html += `<tr>
+                    <td>${i+1}</td>
+                    <td style="font-weight:600;color:var(--gold-light);">${x.nama}</td>
+                    <td>${x.gram} gr</td>
+                    <td>Rp ${x.harga.toLocaleString('id-ID')}</td>
+                    <td>Rp ${x.modal.toLocaleString('id-ID')}</td>
+                    <td style="color:var(--text-muted);font-size:12px;">${x.tgl}</td>
+                    <td style="text-align:center;">
+                        <div class="table-actions">
+                            <button class="btn-icon btn-edit" onclick="editTx(${i})"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button class="btn-icon btn-delete" onclick="deleteTx(${i})"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            document.getElementById('tbody').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">Belum ada transaksi.</td></tr>';
+            document.getElementById('buyPrice').textContent  = HARGA_BELI_HARI_INI.toLocaleString('id-ID');
+            document.getElementById('sellPrice').textContent = HARGA_JUAL_HARI_INI.toLocaleString('id-ID');
+            document.getElementById('totalGram').textContent = gram.toFixed(2) + ' gr';
+            document.getElementById('totalModal').textContent = 'Rp ' + modal.toLocaleString('id-ID');
+            const aset = gram * HARGA_JUAL_HARI_INI;
+            document.getElementById('totalAset').textContent = 'Rp ' + aset.toLocaleString('id-ID');
+            const diff = aset - modal;
+            document.getElementById('profit').innerHTML = diff >= 0
+                ? `<span class="green">🟢 Untung Rp ${diff.toLocaleString('id-ID')}</span>`
+                : `<span class="red">🔴 Rugi Rp ${Math.abs(diff).toLocaleString('id-ID')}</span>`;
+            document.getElementById('rowCountInfo').textContent = d.length + ' Transaksi';
+        }
+
+        // ─── LIVE GOLD PRICE ──────────────────────────────────
+        async function fetchLiveGoldPrice() {
+            const el = document.getElementById('apiStatus');
+            el.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...';
+            try {
+                const res  = await fetch(GOLD_API_URL);
+                const json = await res.json();
+                if (json.success && json.data?.length) {
+                    const antam = json.data.filter(x => x.materialType?.includes('Antam'));
+                    const g1    = antam.find(x => x.weight === 1);
+                    if (g1) {
+                        HARGA_BELI_HARI_INI = g1.sellPrice;
+                        HARGA_JUAL_HARI_INI = g1.buybackPrice > 0 ? g1.buybackPrice : Math.round(g1.sellPrice * 0.9);
+                    }
+                    const date = antam[0]?.recordedDate || '-';
+                    el.innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--green)"></i> Antam: ${date} · ${new Date().toLocaleTimeString('id-ID')}`;
+                    showToast('✅ Harga emas Antam diperbarui! ' + date);
+                    renderGoldPriceTable(antam);
+                } else throw new Error();
+            } catch {
+                el.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i> API Gagal — fallback';
+                showToast('⚠️ Gunakan harga fallback Antam.');
+            }
+            render();
+        }
+
+        function renderGoldPriceTable(data) {
+            const sorted = [...data].sort((a,b) => a.weight - b.weight);
+            document.getElementById('goldPriceTableBody').innerHTML = sorted.map(x => {
+                const ppg = Math.round(x.sellPrice / x.weight);
+                const bb  = x.buybackPrice > 0 ? 'Rp ' + x.buybackPrice.toLocaleString('id-ID') : '<span style="color:var(--text-muted)">-</span>';
+                return `<tr>
+                    <td style="font-weight:600;">${x.weight} gr</td>
+                    <td>Rp ${x.sellPrice.toLocaleString('id-ID')}</td>
+                    <td>${bb}</td>
+                    <td style="color:var(--text-muted);">Rp ${ppg.toLocaleString('id-ID')}/gr</td>
+                </tr>`;
+            }).join('');
+            document.getElementById('goldPriceSection').style.display = 'block';
+        }
+
+        setInterval(fetchLiveGoldPrice, 30 * 60 * 1000);
+
+        // ─── GOOGLE SHEETS ────────────────────────────────────
+        async function loadFromSheets() {
+            const badge = document.getElementById('sheetsStatus');
+            badge.textContent = 'Sheets: Memuat...'; badge.className = 'integration-badge offline';
+            try {
+                const res  = await fetch(getSheetsUrl());
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch { badge.textContent = 'Sheets: Format Error'; return; }
+                if (Array.isArray(data) && data.length > 0) {
+                    const rows = data.map(r => ({
+                        nama: String(r.nama||''), gram: Number(r.gram)||0,
+                        harga: Number(r.harga)||0, modal: Number(r.modal)||(Number(r.gram)*Number(r.harga)),
+                        tgl: String(r.tgl||new Date().toLocaleString('id-ID'))
+                    })).filter(r => r.nama && r.gram > 0);
+                    if (rows.length) { saveTx(rows); showToast('✅ ' + rows.length + ' transaksi dimuat dari Google Sheets!'); }
+                }
+                badge.textContent = 'Sheets: Terhubung ✓'; badge.className = 'integration-badge';
+            } catch { badge.textContent = 'Sheets: Gagal Koneksi'; badge.className = 'integration-badge offline'; }
+            render();
+        }
+
+        async function syncWithSheets(silent = false) {
+            const badge = document.getElementById('sheetsStatus');
+            if (!silent) showToast('Menyinkronkan ke Google Sheets...');
+            badge.textContent = 'Sheets: Sinkronisasi...';
+            try {
+                await fetch(getSheetsUrl(), { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(getTx()) });
+                badge.textContent = 'Sheets: Terhubung ✓'; badge.className = 'integration-badge';
+                if (!silent) showToast('✅ Data berhasil dikirim ke Google Sheets!');
+            } catch {
+                badge.textContent = 'Sheets: Error'; badge.className = 'integration-badge offline';
+                if (!silent) showToast('❌ Gagal sinkronisasi ke Google Sheets.');
+            }
+        }
+
+        // ─── EXPORT EXCEL ─────────────────────────────────────
+        function exportToExcel() {
+            const d = getTx();
+            if (!d.length) { alert('Tidak ada data!'); return; }
+            const ws = XLSX.utils.json_to_sheet(d.map((x,i) => ({
+                'No': i+1, 'Nama Aset': x.nama, 'Berat (gr)': x.gram,
+                'Harga Beli/gr (IDR)': x.harga, 'Total Modal (IDR)': x.modal, 'Tanggal': x.tgl
+            })));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Gold Portfolio');
+            XLSX.writeFile(wb, 'Gold_Portfolio_Report.xlsx');
+            showToast('✅ Laporan Excel berhasil didownload!');
+        }
+    </script>
+</body>
+</html>
