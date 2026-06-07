@@ -478,10 +478,29 @@
         async function fetchLiveGoldPrice() {
             const el = document.getElementById('apiStatus');
             el.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...';
+            
+            let json = null;
+            let usedCustom = false;
+
             try {
-                const res  = await fetch(GOLD_API_URL);
-                const json = await res.json();
-                if (json.success && json.data?.length) {
+                const customUrl = localStorage.getItem('gold_api_url');
+                if (customUrl) {
+                    usedCustom = true;
+                    try {
+                        const res = await fetch(customUrl);
+                        json = await res.json();
+                    } catch(e) {
+                        console.error('Custom API error:', e);
+                    }
+                }
+
+                if (!json || !json.data || !json.data.length) {
+                    if (usedCustom) console.log('Custom API format invalid or failed. Falling back to default API.');
+                    const res = await fetch(GOLD_API_URL);
+                    json = await res.json();
+                }
+
+                if (json && json.success && json.data?.length) {
                     window.globalGoldData = json.data;
                     const antam = json.data.filter(x => x.materialType?.includes('Antam'));
                     const g1    = antam.find(x => x.weight === 1);
@@ -490,13 +509,15 @@
                         HARGA_JUAL_HARI_INI = g1.buybackPrice > 0 ? g1.buybackPrice : Math.round(g1.sellPrice * 0.9);
                     }
                     const date = antam[0]?.recordedDate || '-';
-                    el.innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--green)"></i> Antam: ${date} · ${new Date().toLocaleTimeString('id-ID')}`;
-                    showToast('✅ Harga emas Antam diperbarui! ' + date);
+                    el.innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--green)"></i> Antam: ${date}`;
+                    if (!usedCustom) showToast('✅ Harga emas Antam diperbarui!');
                     renderGoldPriceTable(antam);
-                } else throw new Error();
-            } catch {
+                } else {
+                    throw new Error('Invalid format');
+                }
+            } catch (e) {
                 el.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i> API Gagal — fallback';
-                showToast('⚠️ Gunakan harga fallback Antam.');
+                showToast('⚠️ Gagal memuat API Emas. Menggunakan harga fallback.');
             }
             render();
         }
