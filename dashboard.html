@@ -324,6 +324,7 @@
 
         const DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxW1HvbWoZ63pTl7og4XqZkQPi3tYBOamRNpJ7RRfoZxAuTCT0F1Vc5JITwXy8VjI6dVQ/exec';
         const GOLD_API_URL       = 'https://logam-mulia-api.iamutaki.workers.dev/api/prices/hargaemas-org';
+        const PROXY_API_URL      = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(GOLD_API_URL);
 
         let HARGA_BELI_HARI_INI = 2888000;
         let HARGA_JUAL_HARI_INI = 2599200;
@@ -342,8 +343,13 @@
         function getSheetsUrl() { return localStorage.getItem('gold_sheets_url') || DEFAULT_SHEETS_URL; }
 
         function loadConfig() {
+            let customApi = localStorage.getItem('gold_api_url') || '';
+            if (customApi.includes('script.google.com')) {
+                customApi = '';
+                localStorage.removeItem('gold_api_url');
+            }
             document.getElementById('sheetsUrl').value = getSheetsUrl();
-            document.getElementById('apiGoldUrl').value = localStorage.getItem('gold_api_url') || '';
+            document.getElementById('apiGoldUrl').value = customApi;
             document.getElementById('sheetsStatus').textContent = 'Sheets: Terkonfigurasi';
             document.getElementById('sheetsStatus').className = 'integration-badge';
         }
@@ -495,9 +501,14 @@
                 }
 
                 if (!json || !json.data || !json.data.length) {
-                    if (usedCustom) console.log('Custom API format invalid or failed. Falling back to default API.');
-                    const res = await fetch(GOLD_API_URL);
-                    json = await res.json();
+                    try {
+                        const res = await fetch(GOLD_API_URL);
+                        json = await res.json();
+                    } catch(e) {
+                        console.warn("Direct API failed, trying proxy...", e);
+                        const proxyRes = await fetch(PROXY_API_URL);
+                        json = await proxyRes.json();
+                    }
                 }
 
                 if (json && json.success && json.data?.length) {
