@@ -174,12 +174,8 @@
                 </div>
                 <div class="api-grid">
                     <div class="api-input-wrap">
-                        <label>Google Apps Script URL</label>
+                        <label>Google Apps Script URL (Penyimpanan Data)</label>
                         <input id="sheetsUrl" type="text" placeholder="https://script.google.com/macros/s/.../exec" onchange="saveConfig()">
-                    </div>
-                    <div class="config-group">
-                        <label>API Harga Emas Custom (Opsional)</label>
-                        <input type="text" id="apiGoldUrl" placeholder="Kosongkan untuk pakai Logam Mulia API bawaan">
                     </div>
                 </div>
             </div>
@@ -343,20 +339,13 @@
         function getSheetsUrl() { return localStorage.getItem('gold_sheets_url') || DEFAULT_SHEETS_URL; }
 
         function loadConfig() {
-            let customApi = localStorage.getItem('gold_api_url') || '';
-            if (customApi.includes('script.google.com')) {
-                customApi = '';
-                localStorage.removeItem('gold_api_url');
-            }
             document.getElementById('sheetsUrl').value = getSheetsUrl();
-            document.getElementById('apiGoldUrl').value = customApi;
             document.getElementById('sheetsStatus').textContent = 'Sheets: Terkonfigurasi';
             document.getElementById('sheetsStatus').className = 'integration-badge';
         }
 
         function saveConfig() {
             localStorage.setItem('gold_sheets_url', document.getElementById('sheetsUrl').value.trim());
-            localStorage.setItem('gold_api_url', document.getElementById('apiGoldUrl').value.trim());
             showToast('Konfigurasi disimpan!');
             loadConfig();
         }
@@ -486,29 +475,15 @@
             el.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...';
             
             let json = null;
-            let usedCustom = false;
 
             try {
-                const customUrl = localStorage.getItem('gold_api_url');
-                if (customUrl) {
-                    usedCustom = true;
-                    try {
-                        const res = await fetch(customUrl);
-                        json = await res.json();
-                    } catch(e) {
-                        console.error('Custom API error:', e);
-                    }
-                }
-
-                if (!json || !json.data || !json.data.length) {
-                    try {
-                        const res = await fetch(GOLD_API_URL);
-                        json = await res.json();
-                    } catch(e) {
-                        console.warn("Direct API failed, trying proxy...", e);
-                        const proxyRes = await fetch(PROXY_API_URL);
-                        json = await proxyRes.json();
-                    }
+                try {
+                    const res = await fetch(GOLD_API_URL);
+                    json = await res.json();
+                } catch(e) {
+                    console.warn("Direct API failed, trying proxy...", e);
+                    const proxyRes = await fetch(PROXY_API_URL);
+                    json = await proxyRes.json();
                 }
 
                 if (json && json.success && json.data?.length) {
