@@ -38,16 +38,8 @@
         /* CONTAINER */
         .container { max-width:1400px; margin:auto; padding:28px 20px; }
 
-        /* LAYOUT SWITCHER */
-        .layout-switcher { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; background:var(--card-dark); padding:12px 20px; border-radius:14px; border:1px solid var(--border-color); }
-        .switch-title { font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:8px; }
-        .switch-buttons { display:flex; gap:8px; }
-        .switch-btn { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:var(--text-muted); padding:8px 16px; border-radius:8px; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:6px; }
-        .switch-btn.active { background:rgba(212,175,55,0.15); border-color:var(--gold-primary); color:var(--gold-light); }
-
         /* WORKSPACE */
         .workspace-wrapper { transition:all 0.4s cubic-bezier(0.165,0.84,0.44,1); margin:0 auto; width:100%; }
-        .workspace-wrapper.mode-hp { max-width:430px; border:12px solid #222; border-radius:36px; background:var(--bg-dark); min-height:800px; padding:15px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); }
 
         /* INTEGRATION BOX */
         .integration-box { background:linear-gradient(135deg,rgba(26,31,44,.9),rgba(15,18,25,.9)); border:1px dashed var(--gold-dark); border-radius:14px; padding:18px; margin-bottom:24px; }
@@ -64,7 +56,6 @@
 
         /* METRIC CARDS */
         .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:24px; }
-        .mode-hp .grid { grid-template-columns:repeat(2,1fr); }
         .card { background:var(--card-dark); border-radius:14px; padding:18px; border:1px solid var(--border-color); position:relative; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,.2); }
         .card::before { content:''; position:absolute; top:0; left:0; width:100%; height:3px; background:linear-gradient(90deg,transparent,var(--gold-dark),transparent); }
         .card:hover { border-color:rgba(212,175,55,.3); transform:translateY(-2px); }
@@ -87,8 +78,10 @@
 
         /* WORKSPACE GRID */
         .workspace-grid { display:grid; grid-template-columns:1fr 2fr; gap:24px; }
-        .mode-hp .workspace-grid { grid-template-columns:1fr; }
-        @media (max-width:900px) { .workspace-grid { grid-template-columns:1fr; } }
+        @media (max-width:900px) { 
+            .workspace-grid { grid-template-columns:1fr; } 
+            .grid { grid-template-columns:repeat(2,1fr); }
+        }
 
         /* FORM SECTION */
         .form-section { background:var(--card-dark); border-radius:14px; padding:22px; border:1px solid var(--border-color); height:fit-content; }
@@ -152,15 +145,6 @@
     </div>
 
     <div class="container">
-
-        <!-- Responsive Simulator Switcher -->
-        <div class="layout-switcher">
-            <div class="switch-title"><i class="fa-solid fa-display"></i> Mode Tampilan:</div>
-            <div class="switch-buttons">
-                <button id="btnLap" class="switch-btn active" onclick="setLayoutMode('laptop')"><i class="fa-solid fa-laptop"></i> Laptop/PC</button>
-                <button id="btnHP" class="switch-btn" onclick="setLayoutMode('hp')"><i class="fa-solid fa-mobile-screen-button"></i> HP</button>
-            </div>
-        </div>
 
         <div id="workspaceWrapper" class="workspace-wrapper">
 
@@ -361,20 +345,6 @@
             localStorage.removeItem('gold_login');
             localStorage.removeItem('gold_user');
             window.location.href = 'index.html';
-        }
-
-        // ─── LAYOUT SIMULATOR ─────────────────────────────────
-        function setLayoutMode(mode) {
-            const w = document.getElementById('workspaceWrapper');
-            if (mode === 'hp') {
-                w.classList.add('mode-hp');
-                document.getElementById('btnHP').classList.add('active');
-                document.getElementById('btnLap').classList.remove('active');
-            } else {
-                w.classList.remove('mode-hp');
-                document.getElementById('btnLap').classList.add('active');
-                document.getElementById('btnHP').classList.remove('active');
-            }
         }
 
         // ─── TOGGLE SETTINGS ──────────────────────────────────
