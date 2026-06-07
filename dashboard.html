@@ -510,14 +510,15 @@
                     }
                     const date = antam[0]?.recordedDate || '-';
                     el.innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--green)"></i> Antam: ${date}`;
-                    if (!usedCustom) showToast('✅ Harga emas Antam diperbarui!');
+                    showToast('✅ Harga emas Antam diperbarui!');
                     renderGoldPriceTable(antam);
                 } else {
-                    throw new Error('Invalid format');
+                    throw new Error('Format JSON tidak sesuai: ' + JSON.stringify(json).substring(0, 50));
                 }
             } catch (e) {
+                console.error("API Error:", e);
                 el.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i> API Gagal — fallback';
-                showToast('⚠️ Gagal memuat API Emas. Menggunakan harga fallback.');
+                showToast('⚠️ Gagal memuat API Emas: ' + e.message);
             }
             render();
         }
