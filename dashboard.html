@@ -145,6 +145,7 @@
     <div class="header">
         <h2>💰 Gold Portfolio Pro <span style="font-size:11px;color:var(--gold-primary);vertical-align:super;">Premium</span></h2>
         <div class="header-actions">
+            <button class="btn-icon" onclick="toggleSettings()" style="color:var(--text-light);background:rgba(255,255,255,0.05);margin-right:8px;" title="Pengaturan API"><i class="fa-solid fa-gear"></i></button>
             <div class="user-tag" id="welcome">👤 Halo, -</div>
             <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
         </div>
@@ -163,8 +164,8 @@
 
         <div id="workspaceWrapper" class="workspace-wrapper">
 
-            <!-- Integration Box -->
-            <div class="integration-box">
+            <!-- Integration Box (Hidden by default) -->
+            <div id="settingsBox" class="integration-box" style="display:none;">
                 <div class="integration-header">
                     <div class="integration-title"><i class="fa-solid fa-circle-nodes"></i> Google Sheets & Real-Time API</div>
                     <div style="display:flex;gap:8px;align-items:center;">
@@ -329,7 +330,11 @@
         let HARGA_JUAL_HARI_INI = 2599200;
 
         // ─── INIT ─────────────────────────────────────────────
-        document.getElementById('welcome').textContent = '👤 Halo, ' + (localStorage.getItem('gold_user') || '').toUpperCase();
+        const loggedInUser = localStorage.getItem('gold_user') || '';
+        const capUser = loggedInUser.charAt(0).toUpperCase() + loggedInUser.slice(1);
+        document.getElementById('welcome').textContent = '👤 Halo, ' + capUser;
+        document.getElementById('nama').value = capUser;
+        
         loadConfig();
         fetchLiveGoldPrice();
         loadFromSheets();
@@ -372,6 +377,16 @@
             }
         }
 
+        // ─── TOGGLE SETTINGS ──────────────────────────────────
+        function toggleSettings() {
+            const box = document.getElementById('settingsBox');
+            if (box.style.display === 'none') {
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
+            }
+        }
+
         // ─── TOAST ────────────────────────────────────────────
         function showToast(msg) {
             const t = document.getElementById('toast');
@@ -404,7 +419,8 @@
                 showToast('Transaksi ditambahkan!');
             }
             saveTx(d);
-            ['nama','gram','hargaBeli','tglTx'].forEach(id => document.getElementById(id).value = '');
+            ['gram','hargaBeli','tglTx'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('nama').value = capUser;
             render();
             syncWithSheets(true);
         }
@@ -424,7 +440,8 @@
         function cancelEdit() {
             document.getElementById('formTitle').textContent   = 'Tambah Transaksi';
             document.getElementById('editIndex').value         = '';
-            ['nama','gram','hargaBeli','tglTx'].forEach(id => document.getElementById(id).value = '');
+            ['gram','hargaBeli','tglTx'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('nama').value              = capUser;
             document.getElementById('btnSubmit').textContent   = 'Simpan Transaksi';
             document.getElementById('btnCancelEdit').classList.add('hidden');
         }
