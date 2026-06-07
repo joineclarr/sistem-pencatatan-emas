@@ -276,7 +276,7 @@
 
         // ─── LOAD DATA ───────────────────────────────────────
         function chartCacheKey(source, weight) { return `emas_chart_${source}_${weight}`; }
-        const CHART_CACHE_TTL = 15 * 60 * 1000;
+        const CHART_CACHE_TTL = 30 * 60 * 1000;
 
         function readChartCache(source, weight) {
             try {

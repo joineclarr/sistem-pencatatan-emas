@@ -295,10 +295,8 @@
         const capUser = loggedInUser.charAt(0).toUpperCase() + loggedInUser.slice(1);
         document.getElementById('welcome').textContent = '👤 Halo, ' + capUser;
         document.getElementById('nama').value = capUser;
-        
-        loadConfig();
-        fetchLiveGoldPrice();
-        loadFromSheets();
+        // (Pemanggilan loadConfig/fetchLiveGoldPrice/loadFromSheets dipindah ke akhir script
+        //  agar tidak kena temporal dead zone pada const PRICE_CACHE_KEY/TTL)
 
         // ─── CONFIG ───────────────────────────────────────────
         function getSheetsUrl() { return localStorage.getItem('gold_sheets_url') || DEFAULT_SHEETS_URL; }
@@ -474,9 +472,9 @@
             return json;
         }
 
-        // Cache harga hari ini (TTL 15 menit)
+        // Cache harga hari ini (TTL 30 menit)
         const PRICE_CACHE_KEY = 'emas_today_cache';
-        const PRICE_CACHE_TTL = 15 * 60 * 1000;
+        const PRICE_CACHE_TTL = 30 * 60 * 1000;
         function readPriceCache() {
             try {
                 const raw = localStorage.getItem(PRICE_CACHE_KEY);
@@ -605,6 +603,11 @@
             XLSX.writeFile(wb, 'Gold_Portfolio_Report.xlsx');
             showToast('✅ Laporan Excel berhasil didownload!');
         }
+
+        // ─── INIT (dijalankan setelah semua const & fungsi siap) ──
+        loadConfig();
+        fetchLiveGoldPrice();
+        loadFromSheets();
     </script>
 </body>
 </html>

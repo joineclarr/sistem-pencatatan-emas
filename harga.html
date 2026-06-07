@@ -180,15 +180,15 @@
 
         // ─── CACHE ────────────────────────────────────────────
         const CACHE_KEY = 'emas_harga_cache';
-        const CACHE_TTL = 15 * 60 * 1000; // 15 menit
+        const CACHE_TTL = 30 * 60 * 1000; // 30 menit
 
         function readCache() {
             try {
                 const raw = localStorage.getItem(CACHE_KEY);
                 if (!raw) return null;
                 const obj = JSON.parse(raw);
-                if (Date.now() - obj.ts > CACHE_TTL) return { data: obj.data, stale: true };
-                return { data: obj.data, stale: false };
+                const stale = Date.now() - obj.ts > CACHE_TTL;
+                return { data: obj.data, ts: obj.ts, stale };
             } catch { return null; }
         }
         function writeCache(data) {
@@ -208,23 +208,24 @@
         }
 
         async function loadAllPrices() {
-            // 1. Tampilkan cache dulu (instan, < 50ms) jika ada
+            // 1. Pakai cache jika masih segar (< 30 menit) — TIDAK fetch ulang, hemat token API
             const cached = readCache();
-            if (cached && cached.data) {
+            if (cached && cached.data && !cached.stale) {
                 allSourceData = cached.data;
                 const totalCached = Object.values(allSourceData).reduce((s, a) => s + a.length, 0);
                 const banner = document.getElementById('infoBanner');
                 banner.className = 'info-banner';
-                banner.innerHTML = `<i class="fa-solid fa-bolt" style="color:var(--gold-primary)"></i> <strong>${totalCached}</strong> data (cache) — memperbarui...`;
+                const mins = Math.round((Date.now() - cached.ts) / 60000);
+                banner.innerHTML = `<i class="fa-solid fa-bolt" style="color:var(--gold-primary)"></i> <strong>${totalCached}</strong> data (cache, ${mins} mnt lalu) — valid 30 menit`;
                 renderSources();
-                if (!cached.stale) {
-                    // cache masih segar, refresh diam-diam di background tanpa blokir
-                    refreshInBackground();
-                    return;
-                }
+                return; // STOP — tidak fetch ke API
             }
 
-            // 2. Fetch fresh via batch (1 round trip)
+            // 2. Cache basi/tidak ada: tampilkan cache lama dulu (jika ada) lalu fetch fresh
+            if (cached && cached.data) {
+                allSourceData = cached.data;
+                renderSources();
+            }
             await fetchFresh();
         }
 
@@ -267,10 +268,6 @@
                     banner.style.color = 'var(--red)';
                 }
             }
-        }
-
-        function refreshInBackground() {
-            fetchFresh();
         }
 
         // ─── FILTER ───────────────────────────────────────────
