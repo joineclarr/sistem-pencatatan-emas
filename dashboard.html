@@ -503,8 +503,12 @@
                 }
             } catch (e) {
                 console.error("API Error:", e);
-                el.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i> API Gagal — fallback';
-                showToast('⚠️ Gagal memuat API Emas: ' + e.message);
+                el.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i> Server Diblokir ISP';
+                let msg = e.message;
+                if (msg.includes('Failed to fetch')) {
+                    msg = 'Koneksi ke server harga emas diblokir oleh provider internet Anda (Indihome/Telkomsel) atau Adblocker.';
+                }
+                showToast('⚠️ ' + msg);
             }
             render();
         }
