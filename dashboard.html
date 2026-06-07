@@ -65,9 +65,6 @@
         .green { color:var(--green) !important; }
         .red { color:var(--red) !important; }
 
-        /* GOLD PRICE TABLE SECTION */
-        .price-section { background:var(--card-dark); border-radius:14px; border:1px solid var(--border-color); overflow:hidden; margin-bottom:24px; display:none; }
-
         /* ACTION ROW */
         .action-row { display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap; }
         .btn-action { display:flex; align-items:center; gap:8px; padding:11px 18px; border:none; border-radius:10px; cursor:pointer; font-weight:600; font-size:13px; font-family:'Outfit',sans-serif; }
@@ -134,17 +131,6 @@
     <!-- Sound Effect -->
     <audio id="kachingSound" src="https://www.myinstants.com/media/sounds/para-sesi-efekti_PaUswM1.mp3" preload="auto"></audio>
 
-    <!-- Modal Tabel Harga -->
-    <div id="priceTableModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
-        <div class="modal-content" style="background:var(--card-dark); border:1px solid var(--border-color); border-radius:14px; padding:24px; max-width:800px; width:90%; max-height:80vh; overflow-y:auto; position:relative; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
-            <button onclick="document.getElementById('priceTableModal').style.display='none'" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-light); cursor:pointer; font-size:20px; transition:color 0.2s;"><i class="fa-solid fa-times"></i></button>
-            <h3 style="margin-bottom:16px; color:var(--gold-light); border-bottom:1px solid var(--border-color); padding-bottom:12px;"><i class="fa-solid fa-table-list"></i> Tabel Harga Emas Lengkap Hari Ini</h3>
-            <div id="fullPriceTableContainer">
-                <i class="fa-solid fa-spinner fa-spin"></i> Memuat data...
-            </div>
-        </div>
-    </div>
-
     <div class="ambient-glow"></div>
     <div class="ambient-glow-2"></div>
 
@@ -152,7 +138,8 @@
     <div class="header">
         <h2>💰 Catatan emas K&D <span style="font-size:11px;color:var(--gold-primary);vertical-align:super;">Premium</span></h2>
         <div class="header-actions">
-            <button class="btn-icon" onclick="showFullPriceTable()" style="color:var(--gold-light);background:rgba(212,175,55,0.15);margin-right:4px;border:1px solid var(--border-color);" title="Tabel Harga Lengkap"><i class="fa-solid fa-table-list"></i></button>
+            <a href="harga.html" class="btn-icon" style="color:var(--gold-light);background:rgba(212,175,55,0.15);margin-right:4px;border:1px solid var(--border-color);text-decoration:none;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;" title="Tabel Harga Lengkap"><i class="fa-solid fa-table-list"></i></a>
+            <a href="chart.html" class="btn-icon" style="color:var(--green);background:rgba(46,204,113,0.15);margin-right:4px;border:1px solid rgba(46,204,113,0.3);text-decoration:none;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;" title="Chart Harga Emas"><i class="fa-solid fa-chart-line"></i></a>
             <button class="btn-icon" onclick="toggleSettings()" style="color:var(--text-light);background:rgba(255,255,255,0.05);margin-right:8px;" title="Pengaturan API"><i class="fa-solid fa-gear"></i></button>
             <div class="user-tag" id="welcome">👤 Halo, -</div>
             <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
@@ -173,6 +160,10 @@
                     </div>
                 </div>
                 <div class="api-grid">
+                    <div class="api-input-wrap">
+                        <label>Emas API Key (emas.maulanar.my.id)</label>
+                        <input id="emasApiKey" type="text" placeholder="Masukkan API Key dari emas.maulanar.my.id" onchange="saveConfig()">
+                    </div>
                     <div class="api-input-wrap">
                         <label>Google Apps Script URL (Penyimpanan Data)</label>
                         <input id="sheetsUrl" type="text" placeholder="https://script.google.com/macros/s/.../exec" onchange="saveConfig()">
@@ -207,8 +198,6 @@
                     <div class="big" id="profit">Rp 0</div>
                 </div>
             </div>
-
-            <!-- Antam Price Table hidden (accessible via header table button) -->
 
             <!-- Action Buttons -->
             <div class="action-row">
@@ -292,19 +281,11 @@
             window.location.href = 'index.html';
         }
 
-        const DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxW1HvbWoZ63pTl7og4XqZkQPi3tYBOamRNpJ7RRfoZxAuTCT0F1Vc5JITwXy8VjI6dVQ/exec';
-        // API harga emas resmi (data Antam & Pegadaian persis dari harga-emas.org)
-        const ACCURATE_API  = 'https://logam-mulia-api.iamutaki.workers.dev/api/prices/hargaemas-org';
-        // CORS proxy fallback jika ISP blokir Cloudflare Workers
-        const CORS_PROXIES  = [
-            'https://api.allorigins.win/raw?url=',
-            'https://api.codetabs.com/v1/proxy?quest='
-        ];
-        // Fallback API jika semua proxy gagal (harga spot dunia, estimasi)
-        const GOLD_USD_API  = 'https://api.gold-api.com/price/XAU';
-        const FOREX_API     = 'https://open.er-api.com/v6/latest/USD';
-        const ANTAM_PREMIUM = { 0.5:0.16, 1:0.09, 2:0.07, 5:0.05, 10:0.04, 25:0.035, 50:0.03, 100:0.025, 250:0.02, 500:0.018, 1000:0.015 };
-        const TROY_OZ_PER_GRAM = 1 / 31.1034768;
+        const DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbx8YTHcSOrGWHq3AZ4Vfj8v3euV-AylKssaofMD_tLW3510NXPB89hJFKbFiu1tit5qkA/exec';
+        // ─── EMAS API (emas.maulanar.my.id) ───────────────────
+        const EMAS_API_BASE = 'https://emas.maulanar.my.id';
+        const EMAS_API_KEY_DEFAULT = '0e527e82-a8cc-40bb-bdd0-1868a488d391';
+        function getEmasApiKey() { return localStorage.getItem('emas_api_key') || EMAS_API_KEY_DEFAULT; }
 
         let HARGA_BELI_HARI_INI = 2888000;
         let HARGA_JUAL_HARI_INI = 2599200;
@@ -324,12 +305,14 @@
 
         function loadConfig() {
             document.getElementById('sheetsUrl').value = getSheetsUrl();
+            document.getElementById('emasApiKey').value = getEmasApiKey();
             document.getElementById('sheetsStatus').textContent = 'Sheets: Terkonfigurasi';
             document.getElementById('sheetsStatus').className = 'integration-badge';
         }
 
         function saveConfig() {
             localStorage.setItem('gold_sheets_url', document.getElementById('sheetsUrl').value.trim());
+            localStorage.setItem('emas_api_key', document.getElementById('emasApiKey').value.trim());
             showToast('Konfigurasi disimpan!');
             loadConfig();
         }
@@ -453,166 +436,122 @@
             document.getElementById('rowCountInfo').textContent = d.length + ' Transaksi';
         }
 
-        // ─── LIVE GOLD PRICE ──────────────────────────────────
+        // ─── LIVE GOLD PRICE (emas.maulanar.my.id) ──────────
+        // Gunakan Apps Script sebagai proxy (bebas CORS)
+        function getFetchMode() { return localStorage.getItem('emas_fetch_mode') || 'auto'; }
+        function setFetchMode(m) { localStorage.setItem('emas_fetch_mode', m); }
+
+        async function emasApiFetch(endpoint) {
+            const apiKey = getEmasApiKey();
+            const mode = getFetchMode();
+
+            // Metode 1: Langsung — hanya dicoba jika belum diketahui gagal (hemat waktu)
+            if (mode !== 'proxy') {
+                try {
+                    const headers = {};
+                    if (apiKey) headers['X-API-Key'] = apiKey;
+                    const res = await fetch(EMAS_API_BASE + endpoint, { headers });
+                    const json = await res.json();
+                    if (json.status === 'success') { setFetchMode('direct'); return json; }
+                    if (json.status === 'error') throw new Error(json.data || json.message);
+                } catch (directErr) {
+                    if (directErr.message && !directErr.message.includes('Failed to fetch') && !directErr.message.includes('NetworkError')) {
+                        throw directErr;
+                    }
+                    setFetchMode('proxy'); // ingat untuk lewati direct fetch berikutnya
+                }
+            }
+
+            // Metode 2: Google Apps Script proxy (CORS-free)
+            const proxyUrl = getSheetsUrl() + '?action=emas_proxy&endpoint=' + encodeURIComponent(endpoint) + '&api_key=' + encodeURIComponent(apiKey);
+            const res = await fetch(proxyUrl);
+            const text = await res.text();
+            let json;
+            try { json = JSON.parse(text); } catch { throw new Error('Invalid JSON dari proxy'); }
+            if (json.status === 'error') {
+                throw new Error(json.data || json.message || 'API Error via proxy');
+            }
+            return json;
+        }
+
+        // Cache harga hari ini (TTL 15 menit)
+        const PRICE_CACHE_KEY = 'emas_today_cache';
+        const PRICE_CACHE_TTL = 15 * 60 * 1000;
+        function readPriceCache() {
+            try {
+                const raw = localStorage.getItem(PRICE_CACHE_KEY);
+                if (!raw) return null;
+                const o = JSON.parse(raw);
+                return { data: o.data, stale: Date.now() - o.ts > PRICE_CACHE_TTL };
+            } catch { return null; }
+        }
+        function writePriceCache(data) {
+            try { localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch {}
+        }
+
+        function applyAntamData(antamData, el, fromCache) {
+            const g1 = antamData.find(x => x.weight === 1 || x.gramasi === 1);
+            if (g1) {
+                HARGA_BELI_HARI_INI = g1.sell_price;
+                HARGA_JUAL_HARI_INI = g1.buyback_price || Math.round(g1.sell_price * 0.9);
+            }
+            window.antamPriceData = antamData;
+            const changeInfo = g1 && g1.sell_price_change !== undefined && g1.sell_price_change !== 0
+                ? (g1.sell_price_change >= 0 ? ' ▲' + g1.sell_price_change.toLocaleString('id-ID') : ' ▼' + Math.abs(g1.sell_price_change).toLocaleString('id-ID'))
+                : '';
+            const icon = fromCache ? '<i class="fa-solid fa-bolt" style="color:var(--gold-primary)"></i>' : '<i class="fa-solid fa-circle-check" style="color:var(--green)"></i>';
+            el.innerHTML = `${icon} Antam resmi${changeInfo}`;
+            render();
+        }
+
         async function fetchLiveGoldPrice() {
             const el = document.getElementById('apiStatus');
-            el.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...';
-            window.priceIsEstimate = false;
 
-            // ─ Coba API akurat (3 cara: langsung, proxy 1, proxy 2) ──
-            async function tryAccurateAPI() {
-                // Coba langsung
-                try {
-                    const r = await fetch(ACCURATE_API);
-                    const j = await r.json();
-                    if (j?.success && j.data?.length) return j;
-                } catch(e) { console.warn('Direct API blocked:', e.message); }
+            // Cek apakah API Key sudah diisi
+            const apiKey = getEmasApiKey();
+            if (!apiKey) {
+                el.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:orange"></i> API Key belum diisi';
+                showToast('⚠️ Masukkan API Key di Pengaturan (ikon ⚙️). Daftar gratis di emas.maulanar.my.id');
+                document.getElementById('settingsBox').style.display = 'block';
+                render();
+                return;
+            }
 
-                // Coba tiap proxy
-                for (const proxy of CORS_PROXIES) {
-                    try {
-                        const r = await fetch(proxy + encodeURIComponent(ACCURATE_API));
-                        const j = await r.json();
-                        if (j?.success && j.data?.length) return j;
-                    } catch(e) { console.warn('Proxy failed:', proxy, e.message); }
-                }
-                return null;
+            // 1. Tampilkan cache dulu (instan)
+            const cached = readPriceCache();
+            if (cached && cached.data) {
+                applyAntamData(cached.data, el, true);
+                if (!cached.stale) return; // cache segar, tidak perlu fetch ulang
+            } else {
+                el.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...';
             }
 
             try {
-                const accurateJson = await tryAccurateAPI();
+                // Ambil data Antam dari source resmi antam
+                const antamRes = await emasApiFetch('/api/prices/today/antam');
 
-                if (accurateJson) {
-                    // ✔️ Gunakan data resmi Antam
-                    window.globalGoldData = accurateJson.data;
-                    const antam = accurateJson.data.filter(x => x.materialType?.includes('Antam'));
-                    const g1 = antam.find(x => x.weight === 1);
-                    if (g1) {
-                        HARGA_BELI_HARI_INI = g1.sellPrice;
-                        HARGA_JUAL_HARI_INI = g1.buybackPrice > 0 ? g1.buybackPrice : Math.round(g1.sellPrice * 0.9);
-                    }
-                    const date = antam[0]?.recordedDate || '-';
-                    el.innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--green)"></i> Antam resmi: ${date}`;
-                    showToast('✅ Harga Antam resmi diperbarui!');
-                    renderGoldPriceTable(antam);
-
+                if (antamRes.status === 'success') {
+                    let antamData = Array.isArray(antamRes.data) ? antamRes.data : [antamRes.data];
+                    writePriceCache(antamData);
+                    applyAntamData(antamData, el, false);
+                    if (!cached) showToast('✅ Harga Antam resmi diperbarui!');
                 } else {
-                    // ⚠️ Fallback: hitung dari harga spot dunia
-                    window.priceIsEstimate = true;
-                    const [goldRes, forexRes] = await Promise.all([
-                        fetch(GOLD_USD_API),
-                        fetch(FOREX_API)
-                    ]);
-                    const goldJson  = await goldRes.json();
-                    const forexJson = await forexRes.json();
-
-                    const priceUSD = goldJson.price;
-                    const idrRate  = forexJson.rates.IDR;
-                    const pricePerGramIDR = priceUSD * TROY_OZ_PER_GRAM * idrRate;
-
-                    const weights = [0.5, 1, 2, 5, 10, 25, 50, 100, 250, 500, 1000];
-                    const today   = new Date().toISOString().slice(0,10);
-
-                    const antamData = weights.map(w => {
-                        const premium = ANTAM_PREMIUM[w] || 0.05;
-                        const sell    = Math.round(pricePerGramIDR * w * (1 + premium));
-                        const buyback = w === 1 ? Math.round(sell * 0.9) : 0;
-                        return { materialType:'Emas Logam Mulia Antam', weight:w, weightUnit:'gr', sellPrice:sell, buybackPrice:buyback, recordedDate:today };
-                    });
-                    const pegData = weights.map(w => {
-                        const sell = Math.round(pricePerGramIDR * w * ((ANTAM_PREMIUM[w]||0.05)*0.95 + 1));
-                        return { materialType:'Emas Logam Mulia Pegadaian', weight:w, weightUnit:'gr', sellPrice:sell, buybackPrice:0, recordedDate:today };
-                    });
-
-                    window.globalGoldData = [...antamData, ...pegData];
-                    const g1 = antamData.find(x => x.weight === 1);
-                    HARGA_BELI_HARI_INI = g1.sellPrice;
-                    HARGA_JUAL_HARI_INI = g1.buybackPrice;
-
-                    el.innerHTML = `<i class="fa-solid fa-circle-check" style="color:orange"></i> Estimasi: $${priceUSD.toLocaleString('en-US',{maximumFractionDigits:0})}/toz`;
-                    showToast('⚠️ Menggunakan estimasi harga spot (bukan resmi Antam)');
-                    renderGoldPriceTable(antamData);
+                    throw new Error(antamRes.message || 'Gagal memuat data Antam');
                 }
 
             } catch (e) {
                 console.error('API Error:', e);
-                el.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i> Gagal memuat harga';
-                showToast('⚠️ Gagal update harga: ' + e.message);
+                const errMsg = e.message || '';
+                if (errMsg.includes('401') || errMsg.includes('403') || errMsg.includes('API Key')) {
+                    el.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i> API Key tidak valid';
+                    showToast('❌ API Key salah atau expired. Periksa di Pengaturan.');
+                    document.getElementById('settingsBox').style.display = 'block';
+                } else {
+                    el.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i> Gagal memuat harga';
+                    showToast('⚠️ Gagal update harga: ' + e.message);
+                }
             }
             render();
-        }
-
-        function renderGoldPriceTable(data) {
-            const sorted = [...data].sort((a,b) => a.weight - b.weight);
-            document.getElementById('goldPriceTableBody').innerHTML = sorted.map(x => {
-                const ppg = Math.round(x.sellPrice / x.weight);
-                const bb  = x.buybackPrice > 0 ? 'Rp ' + x.buybackPrice.toLocaleString('id-ID') : '<span style="color:var(--text-muted)">-</span>';
-                return `<tr>
-                    <td style="font-weight:600;">${x.weight} gr</td>
-                    <td>Rp ${x.sellPrice.toLocaleString('id-ID')}</td>
-                    <td>${bb}</td>
-                    <td style="color:var(--text-muted);">Rp ${ppg.toLocaleString('id-ID')}/gr</td>
-                </tr>`;
-            }).join('');
-            document.getElementById('goldPriceSection').style.display = 'block';
-        }
-
-        // ─── SHOW FULL PRICE TABLE ────────────────────────────
-        function showFullPriceTable() {
-            document.getElementById('priceTableModal').style.display = 'flex';
-            const container = document.getElementById('fullPriceTableContainer');
-
-            if (!window.globalGoldData || window.globalGoldData.length === 0) {
-                container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Data sedang dimuat, harap tunggu sebentar lalu coba lagi...</p>';
-                return;
-            }
-
-            const grouped = {};
-            window.globalGoldData.forEach(item => {
-                const type = item.materialType || 'Lainnya';
-                if (!grouped[type]) grouped[type] = [];
-                grouped[type].push(item);
-            });
-
-            const isEstimate = window.priceIsEstimate;
-            let html = '';
-            if (isEstimate) {
-                html += `<div style="background:rgba(255,165,0,0.1); border:1px solid rgba(255,165,0,0.3); border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:13px; color:orange;">
-                    <i class="fa-solid fa-triangle-exclamation"></i> <strong>Catatan:</strong> Harga ini adalah <strong>estimasi</strong> berdasarkan harga spot dunia karena server resmi Antam tidak bisa diakses dari koneksi Anda. Harga aktual di toko mungkin berbeda.
-                </div>`;
-            } else {
-                html += `<div style="background:rgba(46,204,113,0.08); border:1px solid rgba(46,204,113,0.2); border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:13px; color:var(--green);">
-                    <i class="fa-solid fa-circle-check"></i> Data harga <strong>resmi</strong> dari harga-emas.org — Antam & Pegadaian
-                </div>`;
-            }
-
-            for (let type in grouped) {
-                grouped[type].sort((a, b) => b.weight - a.weight);
-                html += `<h4 style="margin-top:16px; margin-bottom:10px; color:var(--gold-primary); font-size:15px; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-layer-group"></i> ${type}</h4>`;
-                html += `<div style="overflow-x:auto; margin-bottom:20px;">
-                    <table style="width:100%; text-align:left; border-collapse:collapse; font-size:14px; min-width:360px;">
-                        <thead>
-                            <tr style="border-bottom:1px solid var(--border-color); color:var(--text-muted); background:rgba(255,255,255,0.03);">
-                                <th style="padding:10px 14px;">Berat (gr)</th>
-                                <th style="padding:10px 14px;">Harga Beli</th>
-                                <th style="padding:10px 14px;">Buyback</th>
-                                <th style="padding:10px 14px;">Harga/gram</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-                grouped[type].forEach(item => {
-                    const ppg = Math.round(item.sellPrice / item.weight);
-                    html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='transparent'">
-                        <td style="padding:10px 14px; font-weight:700; color:var(--text-light);">${item.weight} gr</td>
-                        <td style="padding:10px 14px; color:#f87171; font-weight:600;">Rp ${item.sellPrice.toLocaleString('id-ID')}</td>
-                        <td style="padding:10px 14px; color:#4ade80;">${item.buybackPrice > 0 ? 'Rp ' + item.buybackPrice.toLocaleString('id-ID') : '<span style="color:var(--text-muted)">-</span>'}</td>
-                        <td style="padding:10px 14px; color:var(--text-muted); font-size:13px;">Rp ${ppg.toLocaleString('id-ID')}/gr</td>
-                    </tr>`;
-                });
-                html += `</tbody></table></div>`;
-            }
-            container.innerHTML = html;
         }
 
         setInterval(fetchLiveGoldPrice, 30 * 60 * 1000);

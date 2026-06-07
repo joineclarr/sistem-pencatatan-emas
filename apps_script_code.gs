@@ -7,6 +7,59 @@
 function doGet(e) {
   var params = e.parameter;
   
+  // === EMAS API PROXY (single endpoint) ===
+  if (params.action === 'emas_proxy') {
+    var endpoint = params.endpoint || '/api/prices/today/antam';
+    var apiKey = params.api_key || '';
+    var baseUrl = 'https://emas.maulanar.my.id';
+    
+    try {
+      var options = {
+        method: 'GET',
+        headers: { 'X-API-Key': apiKey },
+        muteHttpExceptions: true
+      };
+      var response = UrlFetchApp.fetch(baseUrl + endpoint, options);
+      var content = response.getContentText();
+      return ContentService
+        .createTextOutput(content)
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+      return jsonResponse({ status: 'error', message: err.message });
+    }
+  }
+
+  // === EMAS API BATCH (multiple endpoints in 1 round trip, parallel) ===
+  if (params.action === 'emas_batch') {
+    var apiKey = params.api_key || '';
+    var baseUrl = 'https://emas.maulanar.my.id';
+    var endpoints = (params.endpoints || '').split('|').filter(function(s){ return s; });
+
+    try {
+      var requests = endpoints.map(function(ep) {
+        return {
+          url: baseUrl + ep,
+          method: 'get',
+          headers: { 'X-API-Key': apiKey },
+          muteHttpExceptions: true
+        };
+      });
+      // fetchAll = fetch semua URL secara paralel di server Google
+      var responses = UrlFetchApp.fetchAll(requests);
+      var batch = {};
+      for (var i = 0; i < responses.length; i++) {
+        try {
+          batch[endpoints[i]] = JSON.parse(responses[i].getContentText());
+        } catch (e) {
+          batch[endpoints[i]] = { status: 'error', data: 'parse error' };
+        }
+      }
+      return jsonResponse({ status: 'success', batch: batch });
+    } catch (err) {
+      return jsonResponse({ status: 'error', message: err.message });
+    }
+  }
+  
   // === LOGIN VERIFICATION ===
   if (params.action === 'login') {
     var user = (params.user || '').toLowerCase().trim();

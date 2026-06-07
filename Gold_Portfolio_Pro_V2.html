@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold Portfolio Premium Pro</title>
+    <!-- Font & Icon -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- SheetJS for Export Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --gold-primary: #f1c40f;
+            --gold-dark: #d4af37;
+            --gold-light: #f3e5ab;
+            --bg-dark: #0f1219;
+            --card-dark: #1a1f2c;
+            --text-light: #f5f6fa;
+            --text-muted: #8b9bb4;
+            --green: #2ecc71;
+            --red: #e74c3c;
+            --border-color: rgba(212, 175, 55, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.25s ease;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Ambient background glow */
+        .ambient-glow {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, rgba(0,0,0,0) 70%);
+            top: -100px;
+            right: -100px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .ambient-glow-2 {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(46, 204, 113, 0.05) 0%, rgba(0,0,0,0) 70%);
+            bottom: -100px;
+            left: -100px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Login Page */
+        .login-wrap {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: radial-gradient(circle at center, #1a1f2c 0%, #0f1219 100%);
+        }
+
+        .box {
+            background: var(--card-dark);
+            padding: 40px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .box h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .box p.subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gold-dark);
+        }
+
+        .input-group input, select, textarea {
+            width: 100%;
+            padding: 14px 16px 14px 44px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-light);
+            font-size: 15px;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: var(--gold-primary);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 10px rgba(241, 196, 15, 0.2);
+        }
+
+        button.btn-primary {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            color: #111;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.25);
+        }
+
+        button.btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(212, 175, 55, 0.35);
+        }
+
+        .demo-info {
+            margin-top: 24px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            font-size: 13px;
+            color: var(--text-muted);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        .demo-info strong {
+            color: var(--gold-light);
+        }
+
+        /* App Layout */
+        .header {
+            background: linear-gradient(180deg, #161b26 0%, #0f1219 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h2 {
+            font-size: 24px;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-tag {
+            background: rgba(212, 175, 55, 0.1);
+            color: var(--gold-light);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid rgba(231, 76, 60, 0.4);
+            color: var(--red);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-logout:hover {
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            padding: 30px 20px;
+        }
+
+        /* View Mode Switcher (HP / Laptop Simulator Mode & Real Responsive layout) */
+        .layout-switcher {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            background: var(--card-dark);
+            padding: 12px 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .switch-title {
+            font-size: 14px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .switch-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .switch-btn {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .switch-btn.active {
+            background: rgba(212, 175, 55, 0.15);
+            border-color: var(--gold-primary);
+            color: var(--gold-light);
+        }
+
+        /* Main Workspace Simulator Wrapper */
+        .workspace-wrapper {
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .workspace-wrapper.mode-hp {
+            max-width: 430px;
+            border: 12px solid #222;
+            border-radius: 36px;
+            background: var(--bg-dark);
+            min-height: 800px;
+            padding: 15px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+        }
+
+        /* Grid Metrics */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .mode-hp .grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .card {
+            background: var(--card-dark);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--gold-dark), transparent);
+        }
+
+        .card-label {
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-label i {
+            color: var(--gold-dark);
+        }
+
+        .big {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-light);
+        }
+
+        .green { color: var(--green) !important; }
+        .red { color: var(--red) !important; }
+
+        /* API Integration Banner & Config Box */
+        .integration-box {
+            background: linear-gradient(135deg, rgba(26, 31, 44, 0.9) 0%, rgba(15, 18, 25, 0.9) 100%);
+            border: 1px dashed var(--gold-dark);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .integration-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .integration-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gold-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .integration-badge {
+            background: rgba(46, 204, 113, 0.15);
+            color: var(--green);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .integration-badge.offline {
+            background: rgba(231, 76, 60, 0.15);
+            color: var(--red);
+        }
+
+        .api-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .api-input-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .api-input-wrap label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .api-input-wrap input {
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-light);
+            font-size: 13px;
+        }
+
+        /* Action Buttons Row */
+        .action-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            color: #111;
+        }
+
+        .btn-excel {
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid rgba(46, 204, 113, 0.4);
+            color: var(--green);
+        }
+
+        .btn-excel:hover {
+            background: rgba(46, 204, 113, 0.25);
+        }
+
+        .btn-sheets {
+            background: rgba(241, 196, 15, 0.1);
+            border: 1px solid rgba(241, 196, 15, 0.3);
+            color: var(--gold-light);
+        }
+
+        .btn-sheets:hover {
+            background: rgba(241, 196, 15, 0.2);
+        }
+
+        /* Forms & Interactive Grid Layout */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 25px;
+        }
+
+        .mode-hp .workspace-grid {
+            grid-template-columns: 1fr;
+        }
+
+        @media (max-width: 900px) {
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-section {
+            background: var(--card-dark);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            height: fit-content;
+        }
+
+        .form-section h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--gold-light);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-light);
+            outline: none;
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            border-color: var(--gold-primary);
+        }
+
+        /* Table & History style */
+        .history-section {
+            background: var(--card-dark);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .history-header h3 {
+            font-size: 18px;
+            color: var(--gold-light);
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.15);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: rgba(255,255,255,0.02);
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        td {
+            padding: 14px 16px;
+            color: var(--text-light);
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Action Buttons in Table */
+        .table-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .btn-edit {
+            color: var(--gold-primary);
+            background: rgba(241, 196, 15, 0.1);
+        }
+
+        .btn-edit:hover {
+            background: rgba(241, 196, 15, 0.2);
+        }
+
+        .btn-delete {
+            color: var(--red);
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .btn-delete:hover {
+            background: rgba(231, 76, 60, 0.2);
+        }
+
+        /* Modal custom for Edit & Sync Details */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--card-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            color: var(--gold-light);
+            font-size: 18px;
+        }
+
+        .btn-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Status & Logs section */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            background: rgba(255,255,255,0.05);
+            padding: 4px 10px;
+            border-radius: 30px;
+            color: var(--text-muted);
+        }
+
+        /* Notification toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--card-dark);
+            border-left: 4px solid var(--gold-primary);
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(150%);
+            opacity: 0;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-glow"></div>
+    <div class="ambient-glow-2"></div>
+
+    <!-- Login Page -->
+    <div id="loginPage" class="login-wrap">
+        <div class="box">
+            <h2>💰 Gold Portfolio Pro</h2>
+            <p class="subtitle">Platform Manajemen Aset Emas Premium</p>
+            
+            <div class="input-group">
+                <i class="fa-solid fa-user"></i>
+                <input id="username" type="text" placeholder="Username / ID Pengguna">
+            </div>
+            
+            <div class="input-group">
+                <i class="fa-solid fa-lock"></i>
+                <input id="password" type="password" placeholder="Password PIN">
+            </div>
+            
+            <button onclick="doLogin()" class="btn-primary">Akses Portofolio</button>
+            
+            <div id="loginError" style="display:none;margin-top:14px;padding:10px 14px;background:rgba(231,76,60,0.12);border:1px solid rgba(231,76,60,0.3);border-radius:10px;color:#e74c3c;font-size:13px;text-align:center;">
+                <i class="fa-solid fa-circle-exclamation"></i> <span id="loginErrorMsg">Username atau password salah</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard App -->
+    <div id="app" class="hidden">
+        
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h2>💰 Gold Portfolio Pro <span style="font-size: 12px; color: var(--gold-primary); vertical-align: super;">V2 Premium</span></h2>
+            </div>
+            <div class="header-actions">
+                <div class="user-tag" id="welcome">Halo, -</div>
+                <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+            </div>
+        </div>
+
+        <div class="container">
+
+            <!-- Responsive Device Simulator Switcher & Sync Status -->
+            <div class="layout-switcher">
+                <div class="switch-title">
+                    <i class="fa-solid fa-display"></i> Mode Tampilan Simulator:
+                </div>
+                <div class="switch-buttons">
+                    <button id="btnLap" class="switch-btn active" onclick="setLayoutMode('laptop')">
+                        <i class="fa-solid fa-laptop"></i> Laptop/PC
+                    </button>
+                    <button id="btnHP" class="switch-btn" onclick="setLayoutMode('hp')">
+                        <i class="fa-solid fa-mobile-screen-button"></i> HP/Smartphone
+                    </button>
+                </div>
+            </div>
+
+            <!-- Workspace wrapper simulation -->
+            <div id="workspaceWrapper" class="workspace-wrapper">
+
+                <!-- Google Sheets & Live API Configuration & Integration Info -->
+                <div class="integration-box">
+                    <div class="integration-header">
+                        <div class="integration-title">
+                            <i class="fa-solid fa-circle-nodes"></i> Integrasi Google Sheets & Real-Time API
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span class="status-badge" id="apiStatus">
+                                <i class="fa-solid fa-globe"></i> API Emas: Siap
+                            </span>
+                            <span class="integration-badge offline" id="sheetsStatus">Sheets: Offline (Lokal)</span>
+                        </div>
+                    </div>
+                    <div class="api-grid">
+                        <div class="api-input-wrap">
+                            <label>Google Apps Script URL (API Sheets)</label>
+                            <input id="sheetsUrl" type="text" placeholder="https://script.google.com/macros/s/.../exec" onchange="saveConfig()">
+                        </div>
+                        <div class="api-input-wrap">
+                            <label>API Harga Emas (Metal API / Custom URL)</label>
+                            <input id="goldApiUrl" type="text" placeholder="https://api.metals.dev/v1/latest?api_key=..." onchange="saveConfig()">
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; font-size: 12px; color: var(--text-muted); line-height: 1.6;">
+                        <i class="fa-solid fa-info-circle"></i> Portofolio mendukung integrasi dua arah. Masukkan link <strong>Google Apps Script URL</strong> untuk menghubungkan ke Google Sheets online Anda sebagai database eksternal utama.
+                    </div>
+                </div>
+
+                <!-- 6 Metric Cards -->
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-label">Harga Beli Hari Ini <i class="fa-solid fa-arrow-trend-up"></i></div>
+                        <div class="big">Rp <span id="buyPrice">0</span></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Harga Jual Hari Ini <i class="fa-solid fa-arrow-trend-down"></i></div>
+                        <div class="big">Rp <span id="sellPrice">0</span></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Total Berat (Gram) <i class="fa-solid fa-weight-hanging"></i></div>
+                        <div class="big" id="totalGram">0 gr</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Total Modal Investasi <i class="fa-solid fa-wallet"></i></div>
+                        <div class="big" id="totalModal">Rp 0</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Total Nilai Aset Saat Ini <i class="fa-solid fa-coins"></i></div>
+                        <div class="big" id="totalAset">Rp 0</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Estimasi Untung/Rugi <i class="fa-solid fa-chart-line"></i></div>
+                        <div class="big" id="profit">Rp 0</div>
+                    </div>
+                </div>
+
+                <!-- Tabel Harga Emas Antam Semua Varian -->
+                <div id="goldPriceSection" class="history-section" style="display:none; margin-bottom:25px;">
+                    <div class="history-header">
+                        <h3><i class="fa-solid fa-coins" style="color:var(--gold-primary)"></i> Harga Emas Antam Hari Ini (Semua Berat)</h3>
+                        <button class="btn-action btn-sheets" onclick="fetchLiveGoldPrice()" style="padding:8px 14px;font-size:13px;">
+                            <i class="fa-solid fa-rotate"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Berat</th>
+                                    <th>Harga Beli (Jual Toko)</th>
+                                    <th>Harga Buyback (Jual ke Toko)</th>
+                                    <th>Harga per Gram</th>
+                                </tr>
+                            </thead>
+                            <tbody id="goldPriceTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p style="font-size:11px;color:var(--text-muted);margin-top:10px;">
+                        <i class="fa-solid fa-info-circle"></i> Sumber: <a href="https://harga-emas.org" target="_blank" style="color:var(--gold-dark)">harga-emas.org</a> via Logam Mulia API. Auto-refresh setiap 30 menit.
+                    </p>
+                </div>
+
+                <!-- Action Toolbar -->
+                <div class="action-row">
+                    <button class="btn-action btn-excel" onclick="exportToExcel()">
+                        <i class="fa-regular fa-file-excel"></i> Export Excel (.xlsx)
+                    </button>
+                    <button class="btn-action btn-sheets" onclick="syncWithSheets()">
+                        <i class="fa-solid fa-arrows-rotate"></i> Sinkronisasi Google Sheets
+                    </button>
+                    <button class="btn-action btn-sheets" onclick="fetchLiveGoldPrice()">
+                        <i class="fa-solid fa-circle-dollar-to-slot"></i> Cek Harga Emas Terbaru
+                    </button>
+                </div>
+
+                <!-- Forms & Transactions History Grid -->
+                <div class="workspace-grid">
+                    
+                    <!-- Left Form Section -->
+                    <div class="form-section">
+                        <h3 id="formTitle">Form Tambah Transaksi</h3>
+                        <input type="hidden" id="editIndex" value="">
+                        
+                        <div class="form-group">
+                            <label>Nama Transaksi / Pemilik</label>
+                            <input id="nama" class="form-control" type="text" placeholder="Contoh: Logam Mulia Krisna">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Berat Emas (Gram)</label>
+                            <input id="gram" class="form-control" type="number" step="any" placeholder="0.00">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Harga Beli per Gram (Rp)</label>
+                            <input id="hargaBeli" class="form-control" type="number" placeholder="Contoh: 1200000">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tanggal Pembelian (Opsional)</label>
+                            <input id="tglTx" class="form-control" type="datetime-local">
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button id="btnSubmit" onclick="tambah()" class="btn-primary" style="flex: 2;">Simpan Transaksi</button>
+                            <button id="btnCancelEdit" onclick="cancelEdit()" class="btn-logout hidden" style="flex: 1; padding: 10px;">Batal</button>
+                        </div>
+                    </div>
+
+                    <!-- Right Table Section -->
+                    <div class="history-section">
+                        <div class="history-header">
+                            <h3>Riwayat Transaksi Portofolio</h3>
+                            <span class="status-badge" id="rowCountInfo">0 Transaksi</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Nama Aset</th>
+                                        <th>Berat (gr)</th>
+                                        <th>Harga Beli</th>
+                                        <th>Total Modal</th>
+                                        <th>Tanggal</th>
+                                        <th style="width: 100px; text-align: center;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody">
+                                    <!-- Dynamic rows loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast" class="toast">
+        <i class="fa-solid fa-circle-check" style="color: var(--gold-primary);"></i>
+        <span id="toastMsg">Notifikasi berhasil!</span>
+    </div>
+
+    <!-- Custom Dialog Modal for Apps Script Setup Info -->
+    <div id="appScriptModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cara Menghubungkan Google Sheets</h3>
+                <button class="btn-close" onclick="toggleModal('appScriptModal', false)">&times;</button>
+            </div>
+            <div style="font-size: 14px; line-height: 1.6; color: var(--text-light);">
+                <p>1. Buka Google Sheets Anda, lalu klik <strong>Extensions > Apps Script</strong>.</p>
+                <p>2. Paste kode Apps Script berikut:</p>
+                <pre style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; font-size: 11px; margin: 10px 0; overflow-x: auto; color: var(--gold-light);">
+function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getDataRange().getValues();
+  var rows = [];
+  for(var i=1; i&lt;data.length; i++) {
+    rows.push({nama: data[i][0], gram: Number(data[i][1]), harga: Number(data[i][2]), modal: Number(data[i][3]), tgl: data[i][4]});
+  }
+  return ContentService.createTextOutput(JSON.stringify(rows)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var params = JSON.parse(e.postData.contents);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  sheet.clearContents();
+  sheet.appendRow(["Nama", "Gram", "Harga Beli", "Modal", "Tanggal"]);
+  params.forEach(function(r) {
+    sheet.appendRow([r.nama, r.gram, r.harga, r.modal, r.tgl]);
+  });
+  return ContentService.createTextOutput(JSON.stringify({status: "success"})).setMimeType(ContentService.MimeType.JSON);
+}</pre>
+                <p>3. Klik <strong>Deploy > New deployment</strong>. Pilih type <em>Web app</em>, set akses <em>Anyone</em>, dan klik Deploy.</p>
+                <p>4. Salin URL Web App dan paste ke input URL Google Apps Script di atas.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auth via Google Apps Script — password TIDAK ada di source code
+        
+        // Default Google Apps Script URL (user's deployed web app)
+        const DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxFmAbtsV_GPeG6-yRh0MLj8BUp7b8QHcqMTgHjmWe2q0NfnCzB4HKyTTZyH4xf2Fk/exec';
+        
+        // Default prices
+        let HARGA_BELI_HARI_INI = 2015000;
+        let HARGA_JUAL_HARI_INI = 1950000;
+
+        // Helper to get effective Sheets URL
+        function getSheetsUrl() {
+            return localStorage.getItem('gold_sheets_url') || DEFAULT_SHEETS_URL;
+        }
+
+        // Load configuration and data from localStorage
+        function loadConfig() {
+            document.getElementById('sheetsUrl').value = localStorage.getItem('gold_sheets_url') || DEFAULT_SHEETS_URL;
+            document.getElementById('goldApiUrl').value = localStorage.getItem('gold_api_url') || '';
+            const sBadge = document.getElementById('sheetsStatus');
+            sBadge.innerText = 'Sheets: Terkonfigurasi';
+            sBadge.className = 'integration-badge';
+        }
+
+        function saveConfig() {
+            localStorage.setItem('gold_sheets_url', document.getElementById('sheetsUrl').value.trim());
+            localStorage.setItem('gold_api_url', document.getElementById('goldApiUrl').value.trim());
+            showToast('Konfigurasi API berhasil disimpan!');
+            loadConfig();
+        }
+
+        // Layout Simulator
+        function setLayoutMode(mode) {
+            const wrapper = document.getElementById('workspaceWrapper');
+            const btnLap = document.getElementById('btnLap');
+            const btnHP = document.getElementById('btnHP');
+
+            if (mode === 'hp') {
+                wrapper.classList.add('mode-hp');
+                btnHP.classList.add('active');
+                btnLap.classList.remove('active');
+                showToast('Simulator Mode: HP / Smartphone');
+            } else {
+                wrapper.classList.remove('mode-hp');
+                btnLap.classList.add('active');
+                btnHP.classList.remove('active');
+                showToast('Simulator Mode: Laptop / PC Desktop');
+            }
+        }
+
+        // Auth
+        async function doLogin() {
+            const u = document.getElementById('username').value.trim().toLowerCase();
+            const p = document.getElementById('password').value;
+            const errEl = document.getElementById('loginError');
+            const errMsg = document.getElementById('loginErrorMsg');
+            const btn = document.querySelector('.btn-primary');
+
+            if (!u || !p) {
+                errMsg.textContent = 'Username dan password tidak boleh kosong.';
+                errEl.style.display = 'block'; return;
+            }
+
+            // Kirim ke Apps Script untuk verifikasi
+            btn.textContent = 'Memverifikasi...';
+            btn.disabled = true;
+            errEl.style.display = 'none';
+
+            try {
+                const url = DEFAULT_SHEETS_URL + '?action=login&user=' + encodeURIComponent(u) + '&pass=' + encodeURIComponent(p);
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data.success) {
+                    localStorage.setItem('gold_login', '1');
+                    localStorage.setItem('gold_user', u);
+                    showApp();
+                } else {
+                    errMsg.textContent = data.message || 'Username atau password salah.';
+                    errEl.style.display = 'block';
+                }
+            } catch (e) {
+                errMsg.textContent = 'Gagal terhubung ke server. Cek koneksi internet.';
+                errEl.style.display = 'block';
+            }
+
+            btn.textContent = 'Akses Portofolio';
+            btn.disabled = false;
+        }
+
+        function showApp() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            document.getElementById('welcome').innerText = '👤 Halo, ' + localStorage.getItem('gold_user').toUpperCase();
+            loadConfig();
+            fetchLiveGoldPrice(); // Auto fetch on login
+            loadFromSheets();     // Auto pull data from Google Sheets
+        }
+
+        // Load/Pull data FROM Google Sheets (GET request)
+        async function loadFromSheets() {
+            const url = getSheetsUrl();
+            const sheetsBadge = document.getElementById('sheetsStatus');
+            
+            try {
+                sheetsBadge.innerText = 'Sheets: Memuat...';
+                sheetsBadge.className = 'integration-badge offline';
+                
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                // Try parsing as JSON
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch(e) {
+                    console.log('Sheets response bukan JSON, skip load:', text.substring(0, 100));
+                    sheetsBadge.innerText = 'Sheets: Format Belum Siap';
+                    sheetsBadge.className = 'integration-badge offline';
+                    render();
+                    return;
+                }
+                
+                if (Array.isArray(data) && data.length > 0) {
+                    // Validate & normalize each row
+                    const normalized = data.map(row => ({
+                        nama: String(row.nama || ''),
+                        gram: Number(row.gram) || 0,
+                        harga: Number(row.harga) || 0,
+                        modal: Number(row.modal) || (Number(row.gram) * Number(row.harga)),
+                        tgl: String(row.tgl || new Date().toLocaleString('id-ID'))
+                    })).filter(r => r.nama && r.gram > 0);
+                    
+                    if (normalized.length > 0) {
+                        saveTx(normalized);
+                        showToast('✅ ' + normalized.length + ' transaksi dimuat dari Google Sheets!');
+                    }
+                }
+                
+                sheetsBadge.innerText = 'Sheets: Terhubung ✓';
+                sheetsBadge.className = 'integration-badge';
+            } catch (error) {
+                console.error('Load from Sheets error:', error);
+                sheetsBadge.innerText = 'Sheets: Gagal Koneksi';
+                sheetsBadge.className = 'integration-badge offline';
+            }
+            
+            render();
+        }
+
+        function logout() {
+            localStorage.removeItem('gold_login');
+            localStorage.removeItem('gold_user');
+            location.reload();
+        }
+
+        // Transactions CRUD
+        function getTx() {
+            return JSON.parse(localStorage.getItem('gold_tx') || '[]');
+        }
+
+        function saveTx(d) {
+            localStorage.setItem('gold_tx', JSON.stringify(d));
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function toggleModal(id, show) {
+            const modal = document.getElementById(id);
+            if (show) {
+                modal.classList.add('active');
+            } else {
+                modal.classList.remove('active');
+            }
+        }
+
+        // ========== LIVE GOLD PRICE FROM LOGAM MULIA API ==========
+        const GOLD_API_URL = 'https://logam-mulia-api.iamutaki.workers.dev/api/prices/hargaemas-org';
+        let allGoldPrices = []; // Store all weight variants
+
+        async function fetchLiveGoldPrice() {
+            const apiStatusEl = document.getElementById('apiStatus');
+            apiStatusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat harga emas...';
+            
+            try {
+                const res = await fetch(GOLD_API_URL);
+                const json = await res.json();
+                
+                if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+                    // Filter only Antam data
+                    const antamData = json.data.filter(item => 
+                        item.materialType && item.materialType.includes('Antam')
+                    );
+                    
+                    allGoldPrices = antamData;
+                    
+                    // Find the 1 gram Antam entry for main dashboard prices
+                    const antam1gr = antamData.find(item => item.weight === 1);
+                    
+                    if (antam1gr) {
+                        HARGA_BELI_HARI_INI = antam1gr.sellPrice;      // Harga Beli = sellPrice dari toko
+                        HARGA_JUAL_HARI_INI = antam1gr.buybackPrice;   // Harga Jual (Buyback)
+                        
+                        // If buybackPrice is 0, estimate ~90% of sellPrice
+                        if (HARGA_JUAL_HARI_INI === 0) {
+                            HARGA_JUAL_HARI_INI = Math.round(HARGA_BELI_HARI_INI * 0.9);
+                        }
+                    }
+                    
+                    // Display timestamp and date info
+                    const recordedDate = antamData[0].recordedDate || '-';
+                    const updateTime = new Date().toLocaleTimeString('id-ID');
+                    
+                    apiStatusEl.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--green)"></i> Harga Antam: ' + recordedDate + ' (diperbarui ' + updateTime + ')';
+                    
+                    showToast('✅ Harga emas Antam berhasil diperbarui! Tanggal: ' + recordedDate);
+                    
+                    // Render the price comparison table
+                    renderGoldPriceTable(antamData);
+                } else {
+                    throw new Error('Format data API tidak sesuai');
+                }
+            } catch (err) {
+                console.error('Gold API Error:', err);
+                apiStatusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i> API Gagal — Menggunakan harga fallback';
+                
+                // Fallback to latest known Antam price (June 2026)
+                HARGA_BELI_HARI_INI = 2888000;
+                HARGA_JUAL_HARI_INI = 2599200;
+                showToast('⚠️ API gagal, menggunakan harga fallback Antam.');
+            }
+            
+            render();
+        }
+
+        // Render detailed Antam price table (all gram variants)
+        function renderGoldPriceTable(data) {
+            const container = document.getElementById('goldPriceTableBody');
+            if (!container) return;
+            
+            // Sort by weight ascending
+            const sorted = [...data].sort((a, b) => a.weight - b.weight);
+            
+            let html = '';
+            sorted.forEach(item => {
+                const pricePerGram = Math.round(item.sellPrice / item.weight);
+                const buyback = item.buybackPrice > 0 
+                    ? 'Rp ' + item.buybackPrice.toLocaleString('id-ID') 
+                    : '<span style="color:var(--text-muted)">-</span>';
+                    
+                html += `<tr>
+                    <td style="font-weight:600;">${item.weight} gr</td>
+                    <td>Rp ${item.sellPrice.toLocaleString('id-ID')}</td>
+                    <td>${buyback}</td>
+                    <td style="color:var(--text-muted);">Rp ${pricePerGram.toLocaleString('id-ID')}/gr</td>
+                </tr>`;
+            });
+            
+            container.innerHTML = html;
+            
+            // Show the price table section
+            const tableSection = document.getElementById('goldPriceSection');
+            if (tableSection) tableSection.style.display = 'block';
+        }
+        
+        // Auto-refresh gold price every 30 minutes
+        setInterval(fetchLiveGoldPrice, 30 * 60 * 1000);
+
+        // Add & Update Action
+        function tambah() {
+            const nama = document.getElementById('nama').value.trim();
+            const gram = Number(document.getElementById('gram').value);
+            const harga = Number(document.getElementById('hargaBeli').value);
+            const inputTgl = document.getElementById('tglTx').value;
+            
+            if (!nama || !gram || !harga) {
+                alert('Silakan lengkapi semua field data!');
+                return;
+            }
+
+            const d = getTx();
+            const editIdx = document.getElementById('editIndex').value;
+            const finalTgl = inputTgl ? new Date(inputTgl).toLocaleString('id-ID') : new Date().toLocaleString('id-ID');
+
+            if (editIdx !== '') {
+                // Update mode
+                const idx = parseInt(editIdx);
+                d[idx] = {
+                    nama,
+                    gram,
+                    harga,
+                    modal: gram * harga,
+                    tgl: finalTgl
+                };
+                showToast('Transaksi berhasil diperbarui!');
+                cancelEdit();
+            } else {
+                // Insert mode
+                d.push({
+                    nama,
+                    gram,
+                    harga,
+                    modal: gram * harga,
+                    tgl: finalTgl
+                });
+                showToast('Transaksi baru ditambahkan!');
+            }
+
+            saveTx(d);
+            
+            // Clear inputs
+            document.getElementById('nama').value = '';
+            document.getElementById('gram').value = '';
+            document.getElementById('hargaBeli').value = '';
+            document.getElementById('tglTx').value = '';
+
+            render();
+            
+            // Auto sync to sheets if sheetUrl exists
+            if (localStorage.getItem('gold_sheets_url')) {
+                syncWithSheets(true); // silent sync
+            }
+        }
+
+        // Edit mode initiator
+        function editTx(index) {
+            const d = getTx();
+            const item = d[index];
+
+            document.getElementById('formTitle').innerText = 'Form Edit Transaksi';
+            document.getElementById('editIndex').value = index;
+            document.getElementById('nama').value = item.nama;
+            document.getElementById('gram').value = item.gram;
+            document.getElementById('hargaBeli').value = item.harga;
+            document.getElementById('btnSubmit').innerText = 'Update Transaksi';
+            document.getElementById('btnCancelEdit').classList.remove('hidden');
+            
+            // focus to top
+            document.getElementById('nama').focus();
+        }
+
+        function cancelEdit() {
+            document.getElementById('formTitle').innerText = 'Form Tambah Transaksi';
+            document.getElementById('editIndex').value = '';
+            document.getElementById('nama').value = '';
+            document.getElementById('gram').value = '';
+            document.getElementById('hargaBeli').value = '';
+            document.getElementById('tglTx').value = '';
+            document.getElementById('btnSubmit').innerText = 'Simpan Transaksi';
+            document.getElementById('btnCancelEdit').classList.add('hidden');
+        }
+
+        // Delete Action
+        function deleteTx(index) {
+            if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
+                const d = getTx();
+                d.splice(index, 1);
+                saveTx(d);
+                showToast('Transaksi berhasil dihapus');
+                render();
+                
+                if (localStorage.getItem('gold_sheets_url')) {
+                    syncWithSheets(true);
+                }
+            }
+        }
+
+        // Export Excel Action
+        function exportToExcel() {
+            const d = getTx();
+            if (d.length === 0) {
+                alert('Tidak ada data transaksi untuk diexport!');
+                return;
+            }
+
+            const formattedData = d.map((x, i) => ({
+                'No': i + 1,
+                'Nama Aset': x.nama,
+                'Berat (Gram)': x.gram,
+                'Harga Beli per Gram (IDR)': x.harga,
+                'Total Modal (IDR)': x.modal,
+                'Tanggal': x.tgl
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(formattedData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Gold Portfolio");
+            XLSX.writeFile(wb, "Gold_Portfolio_Report.xlsx");
+            showToast('Laporan excel berhasil didownload!');
+        }
+
+        // Google Sheets Sync Implementation — PUSH data TO Sheets (POST)
+        async function syncWithSheets(silent = false) {
+            const url = getSheetsUrl();
+            const data = getTx();
+            const sheetsBadge = document.getElementById('sheetsStatus');
+
+            try {
+                if (!silent) showToast('Menyinkronkan ke Google Sheets...');
+                sheetsBadge.innerText = 'Sheets: Sinkronisasi...';
+                
+                // POST to Apps Script to overwrite sheet with current data
+                await fetch(url, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                sheetsBadge.innerText = 'Sheets: Terhubung ✓';
+                sheetsBadge.className = 'integration-badge';
+                
+                if (!silent) showToast('✅ Data berhasil dikirim ke Google Sheets!');
+            } catch (error) {
+                console.error('Sheets Sync Error:', error);
+                sheetsBadge.innerText = 'Sheets: Error Sync';
+                sheetsBadge.className = 'integration-badge offline';
+                if (!silent) showToast('❌ Gagal sinkronisasi ke Google Sheets.');
+            }
+        }
+
+        // Render dashboard values
+        function render() {
+            const d = getTx();
+            let html = '', gram = 0, modal = 0;
+            
+            d.forEach((x, i) => {
+                gram += x.gram; 
+                modal += x.modal;
+                html += `<tr>
+                    <td>${i + 1}</td>
+                    <td style="font-weight: 600; color: var(--gold-light);">${x.nama}</td>
+                    <td>${x.gram} gr</td>
+                    <td>Rp ${x.harga.toLocaleString('id-ID')}</td>
+                    <td>Rp ${x.modal.toLocaleString('id-ID')}</td>
+                    <td style="color: var(--text-muted); font-size:12px;">${x.tgl}</td>
+                    <td style="text-align: center;">
+                        <div class="table-actions">
+                            <button class="btn-icon btn-edit" onclick="editTx(${i})" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button class="btn-icon btn-delete" onclick="deleteTx(${i})" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            document.getElementById('tbody').innerHTML = html || '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">Belum ada data transaksi.</td></tr>';
+            document.getElementById('buyPrice').innerText = HARGA_BELI_HARI_INI.toLocaleString('id-ID');
+            document.getElementById('sellPrice').innerText = HARGA_JUAL_HARI_INI.toLocaleString('id-ID');
+            document.getElementById('totalGram').innerText = gram.toFixed(2) + ' gr';
+            document.getElementById('totalModal').innerText = 'Rp ' + modal.toLocaleString('id-ID');
+            
+            const aset = gram * HARGA_JUAL_HARI_INI;
+            document.getElementById('totalAset').innerText = 'Rp ' + aset.toLocaleString('id-ID');
+            
+            const diff = aset - modal;
+            const p = document.getElementById('profit');
+            
+            if (diff >= 0) {
+                p.innerHTML = '<span class="green">🟢 Untung Rp ' + diff.toLocaleString('id-ID') + '</span>';
+            } else {
+                p.innerHTML = '<span class="red">🔴 Rugi Rp ' + Math.abs(diff).toLocaleString('id-ID') + '</span>';
+            }
+
+            document.getElementById('rowCountInfo').innerText = d.length + ' Transaksi';
+        }
+
+        // Auto login checking
+        if (localStorage.getItem('gold_login') === '1') {
+            showApp();
+        }
+
+        // Save default URL to localStorage if not set
+        if (!localStorage.getItem('gold_sheets_url')) {
+            localStorage.setItem('gold_sheets_url', DEFAULT_SHEETS_URL);
+        }
+    </script>
+</body>
+</html>

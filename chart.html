@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart Harga Emas — Catatan emas K&D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        :root {
+            --gold-primary: #f1c40f;
+            --gold-dark: #d4af37;
+            --gold-light: #f3e5ab;
+            --bg-dark: #0f1219;
+            --card-dark: #1a1f2c;
+            --text-light: #f5f6fa;
+            --text-muted: #8b9bb4;
+            --green: #2ecc71;
+            --red: #e74c3c;
+            --border-color: rgba(212, 175, 55, 0.15);
+        }
+        * { box-sizing:border-box; margin:0; padding:0; font-family:'Outfit',sans-serif; }
+        body { background:var(--bg-dark); color:var(--text-light); min-height:100vh; }
+
+        .header { background:linear-gradient(180deg,#161b26 0%,#0f1219 100%); border-bottom:1px solid var(--border-color); padding:16px 32px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; backdrop-filter:blur(10px); }
+        .header h2 { font-size:20px; background:linear-gradient(135deg,var(--gold-light),var(--gold-dark)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:700; }
+        .btn-back { background:rgba(212,175,55,0.1); border:1px solid var(--border-color); color:var(--gold-light); padding:8px 16px; border-radius:10px; font-weight:600; cursor:pointer; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+        .btn-back:hover { background:rgba(212,175,55,0.2); }
+
+        .container { max-width:1200px; margin:auto; padding:28px 20px; }
+
+        .chart-card { background:var(--card-dark); border-radius:14px; border:1px solid var(--border-color); padding:24px; margin-bottom:24px; box-shadow:0 8px 20px rgba(0,0,0,.2); }
+        .chart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+        .chart-title { font-size:18px; font-weight:700; color:var(--gold-light); display:flex; align-items:center; gap:10px; }
+        .chart-title i { color:var(--gold-dark); }
+
+        .filters { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+        .filter-group { display:flex; flex-direction:column; gap:4px; }
+        .filter-group label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+        .filter-group select, .filter-group input { padding:8px 12px; background:rgba(0,0,0,.3); border:1px solid var(--border-color); border-radius:8px; color:var(--text-light); font-size:13px; font-family:'Outfit',sans-serif; outline:none; cursor:pointer; }
+        .filter-group select:focus, .filter-group input:focus { border-color:var(--gold-primary); }
+
+        .period-btns { display:flex; gap:6px; }
+        .period-btn { padding:8px 14px; border:1px solid var(--border-color); background:transparent; color:var(--text-muted); border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; font-family:'Outfit',sans-serif; }
+        .period-btn.active { background:rgba(212,175,55,0.15); color:var(--gold-light); border-color:var(--gold-dark); }
+        .period-btn:hover { background:rgba(212,175,55,0.1); color:var(--gold-light); }
+
+        .chart-container { position:relative; height:400px; width:100%; }
+        @media (max-width:768px) { .chart-container { height:300px; } }
+
+        .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:24px; }
+        .stat-card { background:var(--card-dark); border-radius:12px; padding:16px; border:1px solid var(--border-color); }
+        .stat-label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; margin-bottom:6px; }
+        .stat-value { font-size:20px; font-weight:700; }
+        .stat-sub { font-size:12px; color:var(--text-muted); margin-top:4px; }
+
+        .loading-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(15,18,25,0.8); display:flex; align-items:center; justify-content:center; border-radius:14px; z-index:10; }
+        .loading-overlay i { font-size:24px; color:var(--gold-primary); }
+        .loading-overlay.hidden { display:none; }
+
+        .data-table { margin-top:24px; }
+        .data-table .table-responsive { width:100%; overflow-x:auto; border-radius:10px; background:rgba(0,0,0,.12); }
+        .data-table table { width:100%; border-collapse:collapse; font-size:13px; }
+        .data-table th { background:rgba(255,255,255,.02); color:var(--text-muted); font-weight:600; padding:12px 14px; text-align:left; border-bottom:1px solid rgba(255,255,255,.05); white-space:nowrap; }
+        .data-table td { padding:12px 14px; color:var(--text-light); border-bottom:1px solid rgba(255,255,255,.03); }
+        .data-table tr:hover td { background:rgba(255,255,255,.02); }
+        .change-up { color:var(--green); font-weight:600; }
+        .change-down { color:var(--red); font-weight:600; }
+        .change-flat { color:var(--text-muted); }
+
+        .toast { position:fixed; bottom:20px; right:20px; background:var(--card-dark); border-left:4px solid var(--gold-primary); padding:14px 22px; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.3); z-index:2000; display:flex; align-items:center; gap:10px; transform:translateY(150%); opacity:0; transition:all .3s ease; font-size:14px; }
+        .toast.show { transform:translateY(0); opacity:1; }
+
+        @media (max-width:600px) {
+            .header { padding:14px 16px; }
+            .container { padding:16px 12px; }
+            .chart-header { flex-direction:column; align-items:flex-start; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h2>📈 Chart Harga Emas</h2>
+        <a href="dashboard.html" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
+    </div>
+
+    <div class="container">
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-label">Harga Terakhir</div>
+                <div class="stat-value" id="statLatest">-</div>
+                <div class="stat-sub" id="statLatestDate">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Tertinggi (Periode)</div>
+                <div class="stat-value change-up" id="statHigh">-</div>
+                <div class="stat-sub" id="statHighDate">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Terendah (Periode)</div>
+                <div class="stat-value change-down" id="statLow">-</div>
+                <div class="stat-sub" id="statLowDate">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Perubahan</div>
+                <div class="stat-value" id="statChange">-</div>
+                <div class="stat-sub" id="statChangePercent">-</div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i class="fa-solid fa-chart-line"></i> Grafik Harga Emas Antam (1 gram)</div>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>Sumber</label>
+                        <select id="filterSource" onchange="loadChartData()">
+                            <option value="antam">Antam (Resmi)</option>
+                            <option value="galeri24">Galeri 24</option>
+                            <option value="pegadaian">Pegadaian</option>
+                            <option value="hartadinata">Hartadinata</option>
+                            <option value="kinghalim">King Halim</option>
+                            <option value="lotusarchi">Lotus Archi</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Berat</label>
+                        <select id="filterWeight" onchange="loadChartData()">
+                            <option value="1">1 gram</option>
+                            <option value="0.5">0.5 gram</option>
+                            <option value="2">2 gram</option>
+                            <option value="5">5 gram</option>
+                            <option value="10">10 gram</option>
+                            <option value="25">25 gram</option>
+                            <option value="50">50 gram</option>
+                            <option value="100">100 gram</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Period Buttons -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                <div class="period-btns">
+                    <button class="period-btn" data-days="7" onclick="setPeriod(7)">7 Hari</button>
+                    <button class="period-btn active" data-days="30" onclick="setPeriod(30)">30 Hari</button>
+                    <button class="period-btn" data-days="90" onclick="setPeriod(90)">3 Bulan</button>
+                    <button class="period-btn" data-days="180" onclick="setPeriod(180)">6 Bulan</button>
+                    <button class="period-btn" data-days="365" onclick="setPeriod(365)">1 Tahun</button>
+                    <button class="period-btn" data-days="0" onclick="setPeriod(0)">Semua</button>
+                </div>
+                <div class="filter-group" style="flex-direction:row; align-items:center; gap:8px;">
+                    <label style="margin:0;">Tipe:</label>
+                    <select id="filterType" onchange="updateChartType()" style="padding:6px 10px;">
+                        <option value="line">Line</option>
+                        <option value="bar">Bar</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="position:relative;">
+                <div class="chart-container">
+                    <canvas id="goldChart"></canvas>
+                </div>
+                <div class="loading-overlay" id="loadingOverlay">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="chart-card data-table">
+            <div class="chart-header">
+                <div class="chart-title"><i class="fa-solid fa-table-list"></i> Data Harga Harian</div>
+                <span style="font-size:12px; color:var(--text-muted);" id="tableInfo">-</span>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Harga Jual</th>
+                            <th>Buyback</th>
+                            <th>Perubahan Jual</th>
+                            <th>Perubahan Buyback</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                        <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast">
+        <i class="fa-solid fa-circle-check" style="color:var(--gold-primary);"></i>
+        <span id="toastMsg"></span>
+    </div>
+
+    <script>
+        // ─── CONFIG ───────────────────────────────────────────
+        const EMAS_API_BASE = 'https://emas.maulanar.my.id';
+        const EMAS_API_KEY = localStorage.getItem('emas_api_key') || '0e527e82-a8cc-40bb-bdd0-1868a488d391';
+        const SHEETS_URL = localStorage.getItem('gold_sheets_url') || 'https://script.google.com/macros/s/AKfycbx8YTHcSOrGWHq3AZ4Vfj8v3euV-AylKssaofMD_tLW3510NXPB89hJFKbFiu1tit5qkA/exec';
+
+        let currentPeriod = 30;
+        let chartInstance = null;
+        let allData = [];
+
+        // ─── AUTH GUARD ───────────────────────────────────────
+        if (localStorage.getItem('gold_login') !== '1') {
+            window.location.href = 'index.html';
+        }
+
+        // ─── API FETCH ────────────────────────────────────────
+        async function emasApiFetch(endpoint) {
+            const mode = localStorage.getItem('emas_fetch_mode') || 'auto';
+
+            // Metode 1: Langsung — hanya jika belum diketahui gagal
+            if (mode !== 'proxy') {
+                try {
+                    const headers = { 'X-API-Key': EMAS_API_KEY };
+                    const res = await fetch(EMAS_API_BASE + endpoint, { headers });
+                    const json = await res.json();
+                    if (json.status === 'success') { localStorage.setItem('emas_fetch_mode', 'direct'); return json; }
+                    if (json.status === 'error') throw new Error(json.data || json.message);
+                } catch (directErr) {
+                    if (directErr.message && !directErr.message.includes('Failed to fetch') && !directErr.message.includes('NetworkError')) {
+                        throw directErr;
+                    }
+                    localStorage.setItem('emas_fetch_mode', 'proxy');
+                }
+            }
+
+            // Metode 2: Google Apps Script proxy (CORS-free)
+            const proxyUrl = SHEETS_URL + '?action=emas_proxy&endpoint=' + encodeURIComponent(endpoint) + '&api_key=' + encodeURIComponent(EMAS_API_KEY);
+            const res = await fetch(proxyUrl);
+            const text = await res.text();
+            let json;
+            try { json = JSON.parse(text); } catch { throw new Error('Invalid JSON dari proxy'); }
+            if (json.status === 'error') {
+                throw new Error(json.data || json.message || 'API Error via proxy');
+            }
+            return json;
+        }
+
+        // Batch fetch beberapa endpoint dalam 1 round trip
+        async function emasApiBatch(endpoints) {
+            const mode = localStorage.getItem('emas_fetch_mode') || 'auto';
+            if (mode === 'direct') {
+                const results = {};
+                await Promise.all(endpoints.map(async (ep) => {
+                    try {
+                        const res = await fetch(EMAS_API_BASE + ep, { headers: { 'X-API-Key': EMAS_API_KEY } });
+                        results[ep] = await res.json();
+                    } catch (e) { results[ep] = { status: 'error' }; }
+                }));
+                return results;
+            }
+            const proxyUrl = SHEETS_URL + '?action=emas_batch&endpoints=' + encodeURIComponent(endpoints.join('|')) + '&api_key=' + encodeURIComponent(EMAS_API_KEY);
+            const res = await fetch(proxyUrl);
+            const text = await res.text();
+            let json;
+            try { json = JSON.parse(text); } catch { throw new Error('Invalid JSON dari batch proxy'); }
+            if (json.status === 'error') throw new Error(json.message || 'Batch error');
+            return json.batch || {};
+        }
+
+        // ─── LOAD DATA ───────────────────────────────────────
+        function chartCacheKey(source, weight) { return `emas_chart_${source}_${weight}`; }
+        const CHART_CACHE_TTL = 15 * 60 * 1000;
+
+        function readChartCache(source, weight) {
+            try {
+                const raw = localStorage.getItem(chartCacheKey(source, weight));
+                if (!raw) return null;
+                const o = JSON.parse(raw);
+                return { data: o.data, stale: Date.now() - o.ts > CHART_CACHE_TTL };
+            } catch { return null; }
+        }
+        function writeChartCache(source, weight, data) {
+            try { localStorage.setItem(chartCacheKey(source, weight), JSON.stringify({ ts: Date.now(), data })); } catch {}
+        }
+
+        function dedupeByDate(items) {
+            items.sort((a, b) => new Date(a.updated_at) - new Date(b.updated_at));
+            const seen = new Set();
+            return items.filter(item => {
+                const date = item.updated_at.split('T')[0];
+                if (seen.has(date)) return false;
+                seen.add(date);
+                return true;
+            });
+        }
+
+        async function loadChartData() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.remove('hidden');
+
+            const source = document.getElementById('filterSource').value;
+            const weight = document.getElementById('filterWeight').value;
+
+            // 1. Cache instan
+            const cached = readChartCache(source, weight);
+            if (cached && cached.data && cached.data.length) {
+                allData = cached.data;
+                updateChart(); updateStats(); updateTable();
+                overlay.classList.add('hidden');
+                if (!cached.stale) return; // segar, stop
+            }
+
+            try {
+                const base = `/api/prices?brand[eq]=ANTAM&resource[eq]=${source}&weight[eq]=${weight}&sort_by=updated_at&order=desc&limit=50`;
+
+                // Ambil halaman pertama untuk tahu total halaman
+                const first = await emasApiFetch(`${base}&page=1`);
+                let allItems = (first.data || []).slice();
+                const totalPages = (first.meta && first.meta.total_pages) || 1;
+
+                // Ambil sisa halaman secara PARALEL (bukan satu per satu)
+                if (totalPages > 1) {
+                    const pages = [];
+                    for (let p = 2; p <= Math.min(totalPages, 12); p++) pages.push(p);
+                    const endpoints = pages.map(p => `${base}&page=${p}`);
+                    const batch = await emasApiBatch(endpoints);
+                    endpoints.forEach(ep => {
+                        const res = batch[ep];
+                        if (res && res.data && res.data.length) allItems = allItems.concat(res.data);
+                    });
+                }
+
+                allData = dedupeByDate(allItems);
+                writeChartCache(source, weight, allData);
+
+                if (!cached) showToast(`✅ ${allData.length} data harga dimuat`);
+                updateChart();
+                updateStats();
+                updateTable();
+
+            } catch (e) {
+                console.error('Fetch error:', e);
+                if (!allData.length) showToast('❌ Gagal memuat data: ' + e.message);
+            }
+
+            overlay.classList.add('hidden');
+        }
+
+        // ─── PERIOD FILTER ────────────────────────────────────
+        function setPeriod(days) {
+            currentPeriod = days;
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.days) === days);
+            });
+            updateChart();
+            updateStats();
+            updateTable();
+        }
+
+        function getFilteredData() {
+            if (currentPeriod === 0) return allData;
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - currentPeriod);
+            return allData.filter(item => new Date(item.updated_at) >= cutoff);
+        }
+
+        // ─── CHART ───────────────────────────────────────────
+        function updateChart() {
+            const data = getFilteredData();
+            const labels = data.map(d => d.updated_at.split('T')[0]);
+            const sellPrices = data.map(d => d.sell_price);
+            const buybackPrices = data.map(d => d.buyback_price);
+            const chartType = document.getElementById('filterType').value;
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            const ctx = document.getElementById('goldChart').getContext('2d');
+
+            const gradientSell = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientSell.addColorStop(0, 'rgba(241, 196, 15, 0.3)');
+            gradientSell.addColorStop(1, 'rgba(241, 196, 15, 0.0)');
+
+            const gradientBuyback = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientBuyback.addColorStop(0, 'rgba(46, 204, 113, 0.2)');
+            gradientBuyback.addColorStop(1, 'rgba(46, 204, 113, 0.0)');
+
+            chartInstance = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Harga Jual (Sell)',
+                            data: sellPrices,
+                            borderColor: '#f1c40f',
+                            backgroundColor: chartType === 'line' ? gradientSell : 'rgba(241, 196, 15, 0.6)',
+                            borderWidth: 2.5,
+                            pointRadius: data.length > 60 ? 0 : 3,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#f1c40f',
+                            fill: chartType === 'line',
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Harga Buyback',
+                            data: buybackPrices,
+                            borderColor: '#2ecc71',
+                            backgroundColor: chartType === 'line' ? gradientBuyback : 'rgba(46, 204, 113, 0.6)',
+                            borderWidth: 2,
+                            pointRadius: data.length > 60 ? 0 : 3,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#2ecc71',
+                            fill: chartType === 'line',
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#8b9bb4', font: { family: 'Outfit', size: 12 } }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1a1f2c',
+                            titleColor: '#f3e5ab',
+                            bodyColor: '#f5f6fa',
+                            borderColor: 'rgba(212,175,55,0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            titleFont: { family: 'Outfit', weight: '600' },
+                            bodyFont: { family: 'Outfit' },
+                            callbacks: {
+                                label: function(ctx) {
+                                    return ctx.dataset.label + ': Rp ' + ctx.parsed.y.toLocaleString('id-ID');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#8b9bb4', font: { family: 'Outfit', size: 11 }, maxRotation: 45 },
+                            grid: { color: 'rgba(255,255,255,0.03)' }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#8b9bb4',
+                                font: { family: 'Outfit', size: 11 },
+                                callback: function(value) { return 'Rp ' + (value/1000000).toFixed(1) + ' jt'; }
+                            },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChartType() {
+            updateChart();
+        }
+
+        // ─── STATS ───────────────────────────────────────────
+        function updateStats() {
+            const data = getFilteredData();
+            if (data.length === 0) return;
+
+            const latest = data[data.length - 1];
+            const oldest = data[0];
+            const high = data.reduce((max, d) => d.sell_price > max.sell_price ? d : max, data[0]);
+            const low = data.reduce((min, d) => d.sell_price < min.sell_price ? d : min, data[0]);
+            const change = latest.sell_price - oldest.sell_price;
+            const changePercent = ((change / oldest.sell_price) * 100).toFixed(2);
+
+            document.getElementById('statLatest').textContent = 'Rp ' + latest.sell_price.toLocaleString('id-ID');
+            document.getElementById('statLatestDate').textContent = formatDate(latest.updated_at);
+
+            document.getElementById('statHigh').textContent = 'Rp ' + high.sell_price.toLocaleString('id-ID');
+            document.getElementById('statHighDate').textContent = formatDate(high.updated_at);
+
+            document.getElementById('statLow').textContent = 'Rp ' + low.sell_price.toLocaleString('id-ID');
+            document.getElementById('statLowDate').textContent = formatDate(low.updated_at);
+
+            const changeEl = document.getElementById('statChange');
+            const changePercentEl = document.getElementById('statChangePercent');
+            if (change >= 0) {
+                changeEl.innerHTML = `<span class="change-up">▲ Rp ${change.toLocaleString('id-ID')}</span>`;
+                changePercentEl.innerHTML = `<span class="change-up">+${changePercent}%</span> dari ${formatDate(oldest.updated_at)}`;
+            } else {
+                changeEl.innerHTML = `<span class="change-down">▼ Rp ${Math.abs(change).toLocaleString('id-ID')}</span>`;
+                changePercentEl.innerHTML = `<span class="change-down">${changePercent}%</span> dari ${formatDate(oldest.updated_at)}`;
+            }
+        }
+
+        // ─── TABLE ────────────────────────────────────────────
+        function updateTable() {
+            const data = getFilteredData();
+            const reversed = [...data].reverse(); // newest first
+            document.getElementById('tableInfo').textContent = `${data.length} data ditampilkan`;
+
+            if (reversed.length === 0) {
+                document.getElementById('dataTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">Tidak ada data.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            reversed.forEach((item, i) => {
+                const prev = reversed[i + 1]; // prev by date (older)
+                const sellChange = prev ? item.sell_price - prev.sell_price : 0;
+                const buybackChange = prev ? item.buyback_price - prev.buyback_price : 0;
+
+                html += `<tr>
+                    <td style="font-weight:600; white-space:nowrap;">${formatDate(item.updated_at)}</td>
+                    <td>Rp ${item.sell_price.toLocaleString('id-ID')}</td>
+                    <td>Rp ${item.buyback_price.toLocaleString('id-ID')}</td>
+                    <td class="${sellChange > 0 ? 'change-up' : sellChange < 0 ? 'change-down' : 'change-flat'}">
+                        ${sellChange > 0 ? '▲' : sellChange < 0 ? '▼' : '—'} ${sellChange !== 0 ? 'Rp ' + Math.abs(sellChange).toLocaleString('id-ID') : '-'}
+                    </td>
+                    <td class="${buybackChange > 0 ? 'change-up' : buybackChange < 0 ? 'change-down' : 'change-flat'}">
+                        ${buybackChange > 0 ? '▲' : buybackChange < 0 ? '▼' : '—'} ${buybackChange !== 0 ? 'Rp ' + Math.abs(buybackChange).toLocaleString('id-ID') : '-'}
+                    </td>
+                </tr>`;
+            });
+            document.getElementById('dataTableBody').innerHTML = html;
+        }
+
+        // ─── HELPERS ──────────────────────────────────────────
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // ─── INIT ─────────────────────────────────────────────
+        loadChartData();
+    </script>
+</body>
+</html>
